@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # deploy-pages looks up the uploaded artifact through the Actions API
   pages: write
   id-token: write
 
@@ -18,12 +19,11 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# two jobs, not one: deploying straight after the upload in the same job can ask for the artifact
+# before GitHub lists it ("No artifacts named github-pages were found")
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -36,6 +36,13 @@ jobs:
         with:
           path: src
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
