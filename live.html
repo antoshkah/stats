@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>stats (live)</title>
+    <meta name="theme-color" content="#141414" />
+    <link rel="icon" type="image/png" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-180.png" />
+    <!-- the app's look (dark theme, writer mono): style.css's defaults -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="viewing live">
+    <!-- someone's shared stats, read-only, updating as they change them (live.js) -->
+    <div class="viewing-label">
+      <svg class="ic"><use href="#i-eye" /></svg>
+      <!-- connecting… / offline / … in words; once live it's empty and the eye blinks (live.js) -->
+      <span class="live-state" id="liveState">connecting…</span>
+    </div>
+    <div id="list"></div>
+    <!-- under the stats: "#stats" → the app. the app decides what you see: a browser with no stats here gets the
+         first-time # screen; one that already has stats goes straight to them (no first-time steps) -->
+    <a class="live-home" href="./" aria-label="open stats">#stats</a>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></symbol>
+      </defs>
+    </svg>
+
+    <!-- Supabase's library, for the live updates (websocket); this page only works online anyway -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="live.js"></script>
+  </body>
+</html>

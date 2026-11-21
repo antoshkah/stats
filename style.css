@@ -1,0 +1,838 @@
+/* stats: all the styles. the colours / font come from :root variables that the inline script
+   in index.html sets from your settings before the page draws */
+@font-face {
+  font-family: "iA Writer Mono";
+  src: url("../fonts/ia-writer-mono-latin-400-normal.ttf") format("truetype");
+  font-weight: 400;
+}
+@font-face {
+  font-family: "iA Writer Mono";
+  src: url("../fonts/ia-writer-mono-latin-700-normal.ttf") format("truetype");
+  font-weight: 700;
+}
+/* the real italic (e.g. "stats" on the welcome page), instead of a slanted fake */
+@font-face {
+  font-family: "iA Writer Mono";
+  src: url("../fonts/ia-writer-mono-latin-400-italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+:root {
+  color-scheme: dark;
+  --bg: #141414;
+  --fg: #ece7df;
+  --muted: #8a857d;
+  --card: #1f1f1f;
+  --line: #333;
+  --danger: #e0644f;
+  --font: "iA Writer Mono", "Courier New", monospace;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body {
+  font-family: var(--font);
+  font-weight: bold;
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button { touch-action: manipulation; } /* no double-tap zoom when tapping fast */
+
+/* one stat per row: greyed name on the left, number on the right */
+#list {
+  width: min(100%, 260px);
+  display: flex;
+  flex-direction: column;
+}
+.empty #list { display: none; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.row .name { flex: 1; min-width: 0; font-size: 1.1rem; color: var(--muted); overflow-wrap: anywhere; }
+.row .count {
+  padding: 8px 0;
+  font-size: 3rem;
+  line-height: 1.1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* first visit: the page stays black like the rest of the app (the "fresh" class still marks it, for the guide below) */
+html.fresh, html.fresh body { background: var(--bg); color: var(--fg); }
+
+/* first visit: the # in the middle, "stats" (italic) under it */
+.intro { display: flex; flex-direction: column; align-items: center; }
+.intro[hidden] { display: none; }
+/* "#1st time?" / "#welcomeback": one big plain text button. display: block, not grid (a grid split the words into rows) */
+/* the # pops in first, alone in the middle (a quick swell and settle); the rest types after it on a tap / hold */
+.intro-hash { display: inline-block; }
+.intro-hash.pop { animation: hashpop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes hashpop { from { transform: scale(0); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } to { transform: scale(1); } }
+.intro .intro-q { display: block; padding: 14px 8px 6px; font-size: 2.6rem; line-height: 1; white-space: nowrap; touch-action: manipulation; }
+/* "second time?" page: off-white like the first-visit page, big cloud · import · back */
+#startDialog { background: var(--fg); color: var(--bg); }
+.start-icons { justify-content: center; gap: 28px; }
+.start-icons button { width: 80px; height: 80px; }
+.start-icons .ic { width: 52px; height: 52px; }
+
+/* the plus (id "star", its old shape): add a stat, hold for the menu. bigger while there are no stats */
+.star {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  color: var(--fg);
+}
+.star svg { width: 32px; height: 32px; stroke-width: 2.4; }
+.empty .star { width: 80px; height: 80px; }
+.empty .star svg { width: 52px; height: 52px; }
+.star[hidden] { display: none; }
+
+/* adding a stat: just a cursor in empty space, then # (counted) or clock (timed) below */
+.composer { width: min(100%, 260px); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.composer[hidden] { display: none; }
+.newbox {
+  width: 100%;
+  font: inherit;
+  font-size: 1.5rem; /* 16px+ also stops iOS zooming in on focus */
+  padding: 10px 0;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  caret-color: var(--fg);
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.kinds { display: flex; gap: 28px; }
+.kinds button { width: 56px; height: 56px; display: grid; place-items: center; color: var(--fg); }
+.kinds .ic { width: 30px; height: 30px; }
+/* # for counted stats is the real character, so it follows the chosen font */
+.hash { font-family: var(--font); font-size: 2rem; font-weight: bold; line-height: 1; }
+.d-kinds .hash { font-size: 1.2rem; }
+
+/* timed stats: smaller text (the values are wider), greyed out while paused */
+.row .count.timer { font-size: 2.2rem; }
+.paused { color: var(--muted); }
+
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 6px;
+  width: min(60vw, 200px);
+  font-family: inherit;
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+/* full pages (settings, export, yes / no): the whole screen, content centred */
+dialog.page {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  text-align: center;
+}
+dialog.page[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+dialog.page > * { width: min(100%, 300px); }
+.settings { width: min(100%, 300px); } /* wide enough for the two columns of info checkboxes */
+.icons button[hidden] { display: none; }
+/* 👍 👎 sit close together, centred */
+#confirmView .icons, #exportConfirm .icons { justify-content: center; gap: 36px; }
+/* export page: a little wider so the labels under the icons have room */
+#exportChoices { width: min(100%, 340px); }
+
+/* plain text button lists (zero, menu, intro) */
+.choices { display: grid; }
+.choices[hidden] { display: none; }
+.choices button { padding: 14px; }
+.muted { color: var(--muted); }
+.danger { color: var(--danger); }
+/* a row of symbols (menu, reset/delete) */
+.icons { display: flex; justify-content: space-around; }
+.icons[hidden] { display: none; }
+.icons button { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; }
+.ic { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.glyph { font-size: 1.9rem; font-weight: 900; line-height: 1; }
+/* the menu: a full page (class "page"), its icons in a row in the middle */
+#menuDialog .icons { width: min(100%, 320px); }
+/* a bit bigger than the icons on the smaller pages, now that the menu has the whole screen */
+#menuDialog .icons button { width: 64px; height: 64px; }
+#menuDialog .icons .ic { width: 32px; height: 32px; }
+#menuDialog .icons button.pair { width: 88px; }
+#menuDialog .icons button.pair .ic { width: 30px; height: 30px; }
+#menuDialog .glyph { font-size: 2.3rem; }
+/* the cloud only fills the middle of its drawing, so it gets a bigger box to look the same size as the others */
+#menuDialog #accountBtn .ic { width: 40px; height: 40px; }
+#helpDialog .legend .duo { display: flex; height: 44px; align-items: center; }
+#helpDialog .legend .duo .ic { width: 30px; height: 30px; }
+.icons button.pair { width: 72px; padding: 0; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 2px; }
+.icons button.pair .ic { flex: none; display: block; width: 24px; height: 24px; }
+
+/* viewing someone's file: eye + (read-only) above the list, exit below */
+.viewing-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.viewing-label .ic { width: 34px; height: 34px; color: var(--fg); }
+.viewing-label span { font-size: 0.8rem; font-style: italic; }
+.viewing-label[hidden], #viewBack[hidden] { display: none; }
+/* live view, connected: the eye blinks now and then (instead of saying "live") */
+.viewing-label.is-live .ic { animation: eyeblink 4s ease-in-out infinite; transform-origin: center; }
+@keyframes eyeblink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@media (prefers-reduced-motion: reduce) { .viewing-label.is-live .ic { animation: none; } }
+#viewBack { width: 56px; height: 56px; display: grid; place-items: center; color: var(--muted); }
+body.viewing .row .count { cursor: default; }
+/* the whole app is bold, so the export question goes regular to let its key words stand out */
+.confirm-text { font-weight: normal; }
+.confirm-text b { font-weight: bold; color: var(--fg); }
+#confirmText.rich, .sync-warn { font-weight: normal; }
+#confirmText.rich b, .sync-warn b { font-weight: bold; color: var(--fg); }
+/* a heading above the question: caution symbol, then the bold word, all centred */
+#confirmText .ask-head, .sync-warn .ask-head { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--fg); }
+#confirmText .ask-head .ic, .sync-warn .ask-head .ic { width: 30px; height: 30px; }
+#confirmText, .confirm-text { padding: 14px 8px 6px; font-size: 0.9rem; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+
+/* one stat, full screen: tap any empty space to go back */
+#editDialog {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  text-align: center;
+}
+#editDialog[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+#editDialog > * { width: min(100%, 300px); }
+#editName { font-size: 1.1rem; color: var(--muted); overflow-wrap: anywhere; }
+/* renaming: same spot and size as the name, in full colour with a caret (16px+ so iOS doesn't zoom in) */
+#editNameInput {
+  font: inherit;
+  font-size: max(1.1rem, 16px);
+  padding: 0;
+  text-align: center;
+  color: var(--fg);
+  caret-color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+#editNameInput[hidden] { display: none; }
+#editCount {
+  padding: 12px 0;
+  font-size: 5.5rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+#editCount.timer { font-size: 3.4rem; }
+.edit-row { display: flex; justify-content: space-around; }
+.edit-row button { width: 64px; height: 56px; font-size: 2rem; line-height: 1; color: var(--muted); display: grid; place-items: center; }
+.edit-row button[hidden] { display: none; }
+.edit-row button.danger { color: var(--danger); }
+/* greyed info under the buttons: created date, reset count */
+.edit-meta { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: normal; color: var(--muted); }
+.edit-meta [hidden] { display: none; }
+#editCount.timer { cursor: pointer; }
+/* icons inside the guide's sentences sit in the text; only those, so the demo keeps its own sizes */
+#helpDialog p .ic { width: 1.15em; height: 1.15em; vertical-align: -0.22em; }
+
+/* how to use */
+/* how to use: a full page, everything centred */
+#helpDialog {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  text-align: center;
+  overflow-y: auto;
+}
+#helpDialog[open] { display: flex; flex-direction: column; align-items: center; }
+#helpDialog > * { width: min(100%, 340px); }
+#helpDialog > :first-child { margin-top: auto; } /* auto margins centre vertically but still scroll on short screens */
+#helpDialog > :last-child { margin-bottom: auto; }
+#helpDialog ul { list-style: none; }
+/* menu legend: big symbol, its meaning underneath, one per line */
+#helpDialog .legend { display: flex; justify-content: space-between; align-items: flex-start; margin: 14px 0 6px; }
+#helpDialog .legend li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; font-size: 0.75rem; line-height: 1.3; color: var(--muted); }
+#helpDialog .legend .ic { width: 44px; height: 44px; vertical-align: 0; color: var(--fg); }
+#helpDialog .legend b { font-size: 2.7rem; font-weight: 900; line-height: 1; height: 44px; display: grid; place-items: center; color: var(--fg); }
+/* the demo mimics the real page, so it keeps the app's own alignment */
+#helpDialog .demo { text-align: left; }
+/* first visit: the guide matches the off-white page (dark text), the demo stays dark */
+.fresh #helpDialog { background: var(--fg); color: var(--bg); }
+
+/* "powered by Claude Code" at the bottom of the first-timer guide */
+.welcome-pb { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+
+/* first-timer guide → "add": the Safari / Chrome links, then the exit button, in the middle of a black page */
+.add-home { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.add-home .browsers { align-items: center; gap: 14px; padding: 0; }
+.add-home .browsers li { font-size: 1rem; }
+.add-home a { color: inherit; text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 8px; }
+.add-home a .ic { width: 1.4em; height: 1.4em; flex: none; }
+.add-home-back { margin-top: 28px; padding: 8px; color: var(--muted); }
+/* types out one letter at a time: welcome.js wraps each letter in a span and shows them one by one.
+   every letter sits in its final place from the start, so the line is centred and nothing can be clipped
+   (clipping the line to its box cut off "Code" in Safari when the font loaded a little wider) */
+.pb-text { position: relative; font-size: 0.85rem; white-space: nowrap; }
+/* inline-block so each letter can move (white-space: pre keeps the spaces their width) */
+.pb-text span { display: inline-block; white-space: pre; visibility: hidden; }
+/* each letter comes out of the little guy: from his spot, small, to its own place */
+.pb-text span.on { visibility: visible; animation: popout 0.16s ease-out; }
+@keyframes popout { from { transform: translateX(10px) scale(0.2); opacity: 0; } }
+.pb-text b { color: #d97757; }
+/* the little guy: welcome.js keeps his left edge on the right edge of the last letter out, so the letters
+   come out of him. out of the flow, so he never pushes the text off centre */
+.clawd { position: absolute; left: 0; top: 50%; width: 27px; height: 15px; margin-top: -8px; overflow: visible; opacity: 0; transition: opacity 0.2s, left 0.07s linear; pointer-events: none; }
+.clawd.on { opacity: 1; }
+/* the end: a tiny swell, then he implodes */
+.clawd.gone { opacity: 1; animation: implode 0.3s ease-in forwards; }
+@keyframes implode {
+  35% { transform: scale(1.12); opacity: 1; }
+  to { transform: scale(0); opacity: 0; }
+}
+.clawd rect { fill: #d97757; }
+/* legs: stepping while he types */
+.clawd .legs-b { opacity: 0; }
+.clawd.typing .legs-a { animation: stepA 0.26s step-end infinite; }
+.clawd.typing .legs-b { animation: stepB 0.26s step-end infinite; }
+.clawd .lids { opacity: 0; animation: blink 4s step-end 1s infinite; }
+@keyframes stepA { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes stepB { 0% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes blink { 0% { opacity: 0; } 90% { opacity: 1; } 94% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pb-text span { visibility: visible; }
+  .clawd { display: none; }
+}
+
+/* the cloud in the guide's icon row is a button (opens the cloud sync info), laid out like the other entries */
+#helpDialog .legend .legend-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; font-size: inherit; color: inherit; }
+/* "To sync online click here." only in the first-visit version of the guide */
+#helpDialog:not(.first) .first-only { display: none; }
+#helpDialog.first #helpDone { display: none; } /* first visit: "continue offline" is the way on instead */
+/* …and with the thumbs up hidden, "powered by Claude Code" is the last thing showing: it takes the bottom auto margin,
+   so the guide stays centred top-to-bottom (otherwise it all sinks to the bottom) */
+#helpDialog.first .welcome-pb { margin-top: 28px; margin-bottom: auto; }
+#helpDialog .first-only { margin-top: 4px; }
+#helpDialog .first-only .help-link { color: inherit; font-weight: bold; }
+/* "here" on the cloud info page */
+.help-link { text-decoration: underline; text-underline-offset: 3px; }
+/* cloud sync info: full screen, no border, just the two lines */
+.cloud-info { margin-bottom: 18px; }
+.cloud-info p { font-weight: normal; font-size: 0.95rem; line-height: 1.5; margin: 0 0 10px; }
+.cloud-info p .ic { width: 1.2em; height: 1.2em; vertical-align: -0.25em; }
+/* a small heading at the top of an info page ("for offline use") */
+.cloud-info .info-title { margin: 0 0 14px; font-size: 1rem; }
+.cloud-info .help-link { color: inherit; font-weight: bold; }
+/* not connected: "here" is greyed out, just a word */
+.cloud-info .help-link:disabled { color: var(--muted); opacity: 0.6; font-weight: inherit; text-decoration: none; cursor: default; }
+/* a greyed note right under the line before it (the ? guide) */
+#helpDialog p.tight { margin-bottom: 0; }
+#helpDialog .soon { color: var(--muted); font-size: 0.75rem; }
+.fresh #helpDialog .legend .ic, .fresh #helpDialog .legend b { color: var(--bg); }
+#helpDialog h2 { font-size: 0.85rem; color: var(--muted); margin: 20px 0 6px; text-transform: lowercase; }
+#helpDialog h2:first-child { margin-top: 0; }
+#helpDialog p, #helpDialog li { font-weight: normal; font-size: 0.9rem; line-height: 1.45; margin: 0 0 6px; }
+#helpDialog ul { padding: 0; margin: 0 0 6px; }
+#helpDialog b { font-weight: bold; }
+#helpDialog .done { display: grid; place-items: center; width: 100%; padding: 14px; margin-top: 14px; color: var(--muted); }
+/* the exit button, the same size as on the settings / export pages */
+#helpDialog .done .ic { width: 26px; height: 26px; vertical-align: 0; }
+#helpDialog a { color: inherit; }
+
+/* the little animated walkthrough at the top of the guide */
+.demo {
+  position: relative;
+  height: 210px;
+  margin: 4px 0 14px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* always the app's dark look, even on the off-white first-visit guide */
+  background: var(--bg);
+  color: var(--fg);
+}
+/* fade the scene, not the box, so the dark frame doesn't blink on a light page */
+.demo.fade > * { opacity: 0 !important; transition: opacity 0.4s !important; }
+.demo [hidden] { display: none !important; }
+.d-row { width: 150px; display: flex; align-items: center; gap: 10px; }
+.d-name { flex: 1; font-size: 0.75rem; color: var(--muted); }
+.d-count { font-size: 1.9rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.d-star { width: 32px; height: 32px; display: grid; place-items: center; }
+.d-star svg { width: 20px; height: 20px; }
+.d-compose { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.d-typed { font-size: 0.95rem; min-height: 1.3em; }
+.d-kinds { display: flex; gap: 18px; }
+.d-kinds span { width: 28px; height: 28px; display: grid; place-items: center; }
+.d-kinds svg { width: 18px; height: 18px; }
+.d-count.timer { font-size: 1.35rem; }
+.d-big.timer { font-size: 2rem; }
+.d-caret { display: inline-block; width: 1px; height: 0.9em; margin-left: 1px; vertical-align: -0.1em; background: var(--fg); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.d-pop, .d-zero, .d-menu {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.d-pop.on, .d-zero.on, .d-menu.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+/* the menu: a small box over the dimmed list, like the real one */
+.d-menu { display: flex; gap: 2px; padding: 4px; }
+.d-menu span { width: 30px; height: 30px; display: grid; place-items: center; }
+.d-menu .ic { width: 16px; height: 16px; }
+.d-menu .glyph { font-size: 1.05rem; }
+.d-menu .d-pair { width: 40px; display: flex; justify-content: center; gap: 1px; }
+/* the stat page fills the whole demo screen, like the real one */
+.d-pop {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  box-shadow: none;
+  transform: scale(0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+.d-pop.on { transform: none; }
+.d-pop .d-name { flex: none; }
+.d-big { display: grid; place-items: center; font-size: 3rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.d-btns { width: 150px; display: flex; justify-content: space-around; color: var(--muted); font-size: 1.3rem; line-height: 1; }
+.d-btns span { width: 30px; height: 26px; display: grid; place-items: center; }
+.d-btns .ic, .d-zero .ic { width: 18px; height: 18px; }
+/* the yes / no page also fills the demo screen, like the real one */
+.d-zero { left: 0; top: 0; width: 100%; height: 100%; border: 0; display: flex; box-shadow: none; transform: scale(0.97); flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.d-zero.on { transform: none; }
+.d-ask { font-size: 0.75rem; color: var(--muted); }
+.d-zbtns { display: flex; gap: 24px; }
+.d-zero span { width: 34px; height: 34px; display: grid; place-items: center; }
+/* the cut between scenes: the screen dips to the background and back */
+.d-cut { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity 0.45s ease-in-out; z-index: 3; }
+.d-cut.on { opacity: 1; }
+/* the pointing-hand cursor; its fingertip sits exactly on the target point */
+.d-finger {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  margin: -1px 0 0 -10.5px; /* fingertip = (9, 1.1) in the 24-unit drawing */
+  opacity: 0;
+  transform-origin: 0 0;
+  transition: transform 0.5s ease-in-out, opacity 0.3s;
+  pointer-events: none;
+  z-index: 2;
+}
+.d-finger svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 10.5px 1px; /* squash toward the fingertip */
+  transition: scale 0.12s;
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+.d-finger.on { opacity: 1; }
+.d-finger.press svg { scale: 0.82; }
+/* hold: puff up, press down, then a little shake while held */
+.d-finger.hold svg { animation: hold 0.75s ease-out forwards; }
+@keyframes hold {
+  0% { scale: 1; rotate: 0deg; }
+  20% { scale: 1.2; rotate: 0deg; }
+  40% { scale: 0.8; rotate: 0deg; }
+  55% { scale: 0.8; rotate: -5deg; }
+  70% { scale: 0.8; rotate: 5deg; }
+  85% { scale: 0.8; rotate: -3deg; }
+  100% { scale: 0.8; rotate: 0deg; }
+}
+/* delete: the row vanishes and a few short lines burst out */
+.poof { animation: poof 0.15s forwards; }
+@keyframes poof { to { opacity: 0; } }
+.d-line {
+  position: absolute;
+  width: 1.5px;
+  height: 6px;
+  margin: -3px 0 0 -0.75px;
+  background: var(--fg);
+  pointer-events: none;
+  rotate: var(--a);
+  animation: line 0.4s ease-out forwards;
+}
+@keyframes line { to { translate: var(--dx) var(--dy); opacity: 0; } }
+
+/* reset: the number swells, then lands on 0 */
+.swell { animation: swell 0.5s ease-in-out; }
+@keyframes swell { 45% { scale: 1.7; } }
+
+.bump { animation: bump 0.18s; }
+@keyframes bump { 50% { transform: scale(1.15); } }
+
+/* settings */
+/* one line per setting: symbol on the left, value / name on the right */
+.set-head { width: 100%; height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 2px; font-size: 0.9rem; }
+.set-ic { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: var(--muted); font-size: 0.8rem; }
+.set-val { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.set-val .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line); }
+/* − 0.5s + */
+.stepper { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 0 0 8px; transition: opacity 0.22s; }
+.stepper button { width: 44px; height: 40px; font-size: 1.4rem; color: var(--muted); touch-action: none; }
+.stepper span { min-width: 3.5em; text-align: center; font-variant-numeric: tabular-nums; }
+/* H☝ 2☝  /  0☝ 1☝ 2☝ */
+.modes { display: flex; justify-content: center; gap: 22px; padding-bottom: 8px; }
+.modes button { display: flex; align-items: center; gap: 1px; padding: 6px 8px; color: var(--muted); opacity: 0.55; transition: color 0.15s, opacity 0.15s; }
+.modes button.on { color: var(--fg); opacity: 1; }
+/* "taps" after the 2: just a word, not a choice */
+.modes { align-items: center; }
+.modes-unit { color: var(--muted); font-size: 0.85rem; margin-left: -10px; }
+.row.tappable { cursor: pointer; touch-action: manipulation; } /* no double-tap zoom */
+.set-head .chev, .font-chev { width: 16px; height: 16px; color: var(--muted); transition: rotate 0.22s ease; }
+.setting.open .chev { rotate: 180deg; }
+/* the drop-down: 0fr → 1fr grows to fit whatever is inside */
+.set-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.22s ease; }
+.setting.open .set-body { grid-template-rows: 1fr; }
+.set-inner { min-height: 0; overflow: hidden; opacity: 0; transition: opacity 0.22s ease; }
+.setting.open .set-inner { opacity: 1; }
+/* font: a column of all fonts, chosen one first. closed it's cut to one line (the chosen font);
+   open it grows to show them all. Aa and the arrow sit on top of the first line */
+#fontSetting { position: relative; }
+#fontSetting .font-ic { position: absolute; left: 2px; top: 10px; z-index: 2; }
+#fontSetting .font-chev { position: absolute; right: 2px; top: 12px; z-index: 2; pointer-events: none; }
+.font-list { display: flex; flex-direction: column; height: 40px; overflow: hidden; transition: height 0.25s ease; }
+#fontSetting.open .font-list { height: calc(var(--n) * 40px); }
+/* right edge of the text matches the values on the other lines (chevron 16 + gap 10 + padding 2) */
+/* the fonts under the top line fade in as the list opens and out as it folds, so the one
+   sliding up to the top never visibly crosses over them */
+.font-list button { flex: none; height: 40px; padding: 0 28px 0 32px; text-align: right; font-size: 0.9rem; color: var(--muted); opacity: 0; transition: color 0.2s, opacity 0.2s ease; }
+#fontSetting.open .font-list button { opacity: 1; }
+/* the chosen font rides on top of the others, on the page colour, so nothing shows through it */
+.font-list button:first-child { color: var(--fg); opacity: 1; position: relative; z-index: 1; background: var(--bg); }
+.swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 8px 0 14px; } /* room for the selected ring, so it stays inside the drop-down */
+.swatches button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+}
+.swatches button.on { outline: 2px solid var(--fg); outline-offset: 2px; }
+/* bottom of settings: ? (the guide) next to the exit */
+#settingsDialog .settings-end { justify-content: center; gap: 24px; margin-top: 4px; }
+
+/* settings: tap a line's icon for a small bubble saying what that line is for */
+.set-ic[data-tip] { cursor: help; }
+.settings { position: relative; }
+.set-tip {
+  position: absolute;
+  z-index: 10;
+  width: max-content;
+  white-space: nowrap; /* one line */
+  left: 0; /* (until it's placed) */
+  visibility: hidden; /* hidden ones take no room either, so nothing sticks out sideways */
+  padding: 8px 10px;
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.4;
+  text-align: left;
+  opacity: 0;
+  translate: 0 -4px;
+  pointer-events: none;
+  transition: opacity 0.15s ease, translate 0.15s ease, visibility 0.15s;
+}
+.set-tip.on { opacity: 1; translate: 0 0; visibility: visible; }
+/* nothing in settings may widen the page past the screen */
+#settingsDialog { overflow-x: hidden; }
+/* the little point, aimed at the icon */
+.set-tip::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: var(--point, 14px); /* under the icon's middle (settings.js) */
+  width: 8px;
+  height: 8px;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  rotate: 45deg;
+}
+
+/* hold drop-down: just − 0.5s +, compact and centred, − and + hugging the number */
+.hold-stepper { gap: 2px; padding: 0 0 6px; }
+.hold-stepper button { width: 30px; height: 34px; font-size: 1.2rem; }
+.hold-stepper span { min-width: 3em; }
+
+/* deleted stats in the list (settings → info → deleted): greyed, with a small trash can by the name */
+.row.deleted { opacity: 0.45; }
+.row.deleted .count { cursor: pointer; }
+.del-ic { width: 0.95em; height: 0.95em; vertical-align: -0.12em; margin-left: 4px; }
+/* a deleted stat's page: the number greyed, it's look-only */
+#editDialog.is-deleted #editCount { color: var(--muted); cursor: default; }
+#editDialog.is-deleted #editName { cursor: default; }
+.edit-meta #editDeleted { color: var(--danger); }
+
+/* info: checkboxes stacked, the block centred, the boxes lined up on the left */
+/* info: two columns of three (filled top to bottom), each box left of its label, the whole block centred.
+   it has to fit inside the settings column: the drop-down hides anything that sticks out */
+.checks { width: max-content; max-width: 100%; margin: 0 auto; display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; column-gap: 12px; row-gap: 2px; padding: 0 0 8px; }
+/* each row: box, label, ⓘ. only the box ticks; the label just reads (brighter when ticked) */
+.check-row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; font-size: 0.85rem; color: var(--muted); transition: color 0.15s; }
+.check-row:has(.box.on) { color: var(--fg); }
+.checks .box { position: relative; width: 16px; height: 16px; flex: none; display: grid; place-items: center; border: 1.5px solid currentColor; }
+/* a bigger invisible tap area around the small box */
+.checks .box::after { content: ""; position: absolute; inset: -8px; }
+.checks .box svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; opacity: 0; transition: opacity 0.15s; }
+.checks .box.on svg { opacity: 1; }
+
+/* "how?" links: one per browser (a Google search each), in one column, coming down one after another */
+.browsers { list-style: none; margin: 0; padding: 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.browsers[hidden] { display: none; }
+.browsers li { margin: 0; font-size: 0.95rem; opacity: 0; animation: lower 0.3s ease-out forwards; animation-delay: calc(var(--i) * 0.07s); }
+@keyframes lower { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .browsers li { animation: none; opacity: 1; }
+}
+
+/* info checkboxes: a small ⓘ after each label, for its bubble */
+.checks .check-ic { width: 14px; height: 14px; margin-left: 6px; color: var(--muted); cursor: help; }
+/* show logs on a stat's page: a short list, scrolls if it gets long */
+.edit-log { list-style: none; margin: 6px 0 0; padding: 0; max-height: 7.5em; overflow-y: auto; text-align: center; line-height: 1.5; }
+.edit-meta .edit-log[hidden] { display: none; }
+/* stat page info: the values bold (the wording isn't), the play / pause icon sized to the text */
+.edit-meta b { font-weight: bold; }
+.meta-ic { width: 1.25em; height: 1.25em; vertical-align: -0.3em; stroke-width: 2.6; }
+.check-row { font-size: 0.78rem; gap: 7px; text-align: left; white-space: nowrap; } /* labels stay on one line */
+.checks .check-ic { margin-left: 2px; }
+/* the narrowest phones (~320px wide) don't have room for two columns: one column of six instead */
+@media (max-width: 345px) {
+  .checks { grid-template-rows: none; grid-auto-flow: row; }
+}
+.tip-ic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+
+/* add time (timed stats): three small boxes, h m s, in a row */
+/* account page (menu → cloud): email + password, or who you're logged in as + log out */
+.login, .account-in { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 18px; }
+.login[hidden], .account-in[hidden] { display: none; }
+.login input {
+  width: 100%;
+  font: inherit;
+  font-size: 16px; /* 16px+: no iOS zoom */
+  text-align: center;
+  color: var(--fg);
+  background: transparent;
+  border: 0; /* no underline: just the text (the placeholders show they're fields) */
+  border-radius: 0;
+  padding: 8px 0;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.login input::placeholder { color: var(--muted); }
+/* wrong email / password: the placeholders (or, with no connection, what you typed) go red for a moment */
+.login input.bad, .login input.bad::placeholder { color: var(--danger); }
+.login input { transition: color 0.3s; }
+/* connect: phone · cable · half-circle   half-circle · cable · cloud. flat lines, same weight as the other icons.
+   each side slides 14.5 units to the middle, where the small half-circle sits inside the big one (same centre) */
+.icons button.plug-btn { width: 108px; }
+.plug { width: 92px; height: 27px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.plug-a, .plug-b { transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0); }
+.plug-btn.plugged .plug-a { transform: translateX(14.5px); }
+.plug-btn.plugged .plug-b { transform: translateX(-14.5px); }
+/* a little jolt as it goes in */
+.plug-btn.plugged .plug { animation: jolt 0.2s 0.33s; }
+@keyframes jolt { 40% { transform: translateX(1.5px); } }
+.login-msg { min-height: 1.2em; font-size: 0.8rem; font-weight: normal; color: var(--muted); overflow-wrap: anywhere; }
+.account-email { font-size: 1rem; overflow-wrap: anywhere; }
+.account-out { padding: 10px 18px; border: 1.5px solid currentColor; font-size: 0.9rem; }
+/* live view: username, then the eye (share) or open · copy · stop */
+.share { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.share-name {
+  width: 100%;
+  font: inherit;
+  font-size: 16px; /* 16px+: no iOS zoom */
+  text-align: center;
+  color: var(--fg);
+  background: transparent;
+  border: 0; /* no underline: just the text (the placeholder shows it's a field) */
+  border-radius: 0;
+  padding: 8px 0;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.share-name::placeholder { color: var(--muted); }
+.share-icons { justify-content: center; gap: 8px; }
+/* log out + back, side by side in the middle */
+.account-icons { justify-content: center; gap: 24px; }
+/* logged in: the phone + cloud plug at the top of the page (same drawing as the login's), plugged while online */
+#accountDialog .account-cloud { flex: none; width: 92px; height: 27px; margin-bottom: 18px; cursor: pointer; }
+#accountDialog .account-cloud[hidden] { display: none; }
+.account-cloud.plugged .plug-a { transform: translateX(14.5px); }
+.account-cloud.plugged .plug-b { transform: translateX(-14.5px); }
+/* offline (apart): the side that wins when back online stays bright, the other dims */
+.account-cloud .plug-a, .account-cloud .plug-b { transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.25s; }
+.account-cloud.wins-phone .plug-b, .account-cloud.wins-cloud .plug-a { opacity: 0.35; }
+/* tapped while online (nothing to choose): a quick shake */
+#accountDialog .account-cloud.nope { animation: nope 0.3s; }
+@keyframes nope { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+/* logging out: everything else fades, then the phone and the cloud come apart, and fade away too */
+#accountDialog > * { transition: opacity 0.3s; }
+#accountDialog.leaving > :not(.account-cloud) { opacity: 0; transition: opacity 0.6s; pointer-events: none; }
+#accountDialog.leaving .account-cloud .plug-a, #accountDialog.leaving .account-cloud .plug-b { transform: none; transition-delay: 0.65s; }
+#accountDialog.leaving .account-cloud { opacity: 0; transition: opacity 0.4s ease-in 1.05s; }
+
+.hms { display: flex; justify-content: center; gap: 22px; margin: 10px 0 20px; }
+.hms label { display: flex; align-items: baseline; gap: 3px; color: var(--muted); font-size: 1.4rem; }
+.hms input {
+  width: 1.1ch; /* one digit wide to start; widens to two as you type (updateAddTime), so the row stays centred */
+  transition: width 0.12s ease;
+  font: inherit;
+  font-size: 40px; /* big and 16px+: no iOS zoom */
+  text-align: right;
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-bottom: 0; /* no line: just the number */
+  border-radius: 0;
+  padding: 2px 0;
+  outline: none;
+  -moz-appearance: textfield;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.hms input::-webkit-outer-spin-button, .hms input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.hms input::placeholder { color: var(--muted); }
+/* 👍 dim until there's something to add */
+#addTimeYes.dim { opacity: 0.3; pointer-events: none; }
+#addTimeDialog .icons { justify-content: center; gap: 36px; }
+/* "#stats": the "stats" part in italics ("welcomeback" stays upright) */
+#introRest.italic { font-style: italic; }
+/* live view: "#stats" under the shared stats, a way into the app (upright here) */
+.live-home { margin-top: 28px; padding: 8px; font-size: 1.4rem; color: var(--fg); text-decoration: none; }
+/* no stats yet: "(hold for menu)" in small grey under the +. only while the list is empty and the + is showing */
+.star-hint { display: none; margin-top: -6px; font-size: 0.75rem; font-weight: normal; color: var(--muted); }
+.empty .star-hint { display: block; }
+.star[hidden] + .star-hint { display: none; }
+/* login page: "new? register" / "have an account? log in", small and grey under the plug */
+.login-mode { padding: 4px 8px; font-size: 0.8rem; font-weight: normal; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.login input[hidden] { display: none; }
+.login-msg.bad { color: var(--danger); }
+#loginMsg:empty { display: none; }
+/* login fields: the icon (envelope / key / repeat + key) sits in the middle of the field while it's empty, where
+   placeholder text would be. it goes as soon as something's typed, and turns red with the field on a failed login */
+.login .field { position: relative; display: block; width: 100%; }
+.login .field[hidden] { display: none; }
+.login .field .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--muted); pointer-events: none; transition: opacity 0.15s, color 0.3s; }
+.login .field .ph .ic { width: 27px; height: 27px; }
+.login .field input:not(:placeholder-shown) + .ph { opacity: 0; }
+.login .field input.bad + .ph { color: var(--danger); }
+/* failed login: still plugged in, the plug (phone · cloud) turns red and jitters; then it comes apart */
+.plug-btn.fail { color: var(--danger); }
+.plug-btn.fail .plug { animation: plugjitter 0.45s ease-in-out; }
+@keyframes plugjitter {
+  15% { transform: translateX(-4px); }
+  30% { transform: translateX(4px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-1.5px); }
+  90% { transform: translateX(1px); }
+}
+.plug-btn { transition: color 0.25s; }
+/* the yes / no page with words instead of 👍 / 👎 (e.g. disconnect: keep / delete): the second one is the red one */
+.ask-word { display: none; }
+#zeroDialog.worded .ask-word { display: inline; }
+#zeroDialog.worded #yesBtn .ic, #zeroDialog.worded #noBtn .ic { display: none; }
+#zeroDialog.worded .icons button { width: auto; padding: 8px 12px; font-size: 1rem; }
+#zeroDialog.worded #yesBtn { color: var(--fg); }
+#zeroDialog.worded #noBtn { color: var(--danger); }
+/* "(this action cannot be undone)", on its own line under the question, the words underlined */
+.undone { display: block; margin-top: 4px; }
+.undone u { text-underline-offset: 3px; }
+#syncChoiceDialog.fading { opacity: 0; transition: opacity 0.3s ease-in; }
+#syncChoiceDialog::backdrop { background: transparent; }
+@keyframes pagefadein { from { opacity: 0; } }
+
+/* logging in with stats on both sides: one page, in steps (see the markup) */
+/* 1. the page (black) fades in over the login: the login fades away. then a short empty pause, then its content */
+#syncChoiceDialog[open] { animation: pagefadein 0.4s ease-out; }
+#syncChoiceDialog[open] .sync-page { animation: pagefadein 0.45s ease-out 0.75s both; }
+.sync-page { width: min(100%, 300px); display: flex; flex-direction: column; align-items: center; }
+/* "sync to" and the warning share one spot (stacked in the same grid cell) and cross-fade */
+.sync-head { display: grid; place-items: center; margin-bottom: 18px; }
+.sync-head > * { grid-area: 1 / 1; transition: opacity 0.35s ease; }
+.sync-title { font-size: 0.9rem; color: var(--muted); }
+.sync-warn { opacity: 0; pointer-events: none; padding: 0; }
+#syncChoiceDialog.picked .sync-title { opacity: 0; }
+#syncChoiceDialog.picked .sync-warn { opacity: 1; }
+/* 📱  →  ☁ : the arrow sits between them (always taking its space, so nothing shifts), shown once one's picked */
+.sync-choice { justify-content: center; align-items: center; gap: 18px; margin: 8px 0 34px; }
+.sync-choice button { width: 64px; height: 64px; transition: opacity 0.3s; }
+.sync-choice button .ic { width: 38px; height: 38px; }
+.sync-choice .sub { font-size: 0.8rem; }
+.sync-arrow { width: 34px; height: 34px; color: var(--fg); opacity: 0; transition: opacity 0.3s, rotate 0.3s; }
+#syncChoiceDialog.picked .sync-arrow { opacity: 1; }
+#syncChoiceDialog.to-phone .sync-arrow { rotate: 180deg; } /* ☁ → 📱: the cloud's copy comes down */
+/* the side not picked dims a little */
+#syncChoiceDialog.to-phone #syncToCloud, #syncChoiceDialog.to-cloud #syncToPhone { opacity: 0.45; }
+/* 👍 👎: only once one's picked (they keep their space, so nothing jumps) */
+.sync-confirm { justify-content: center; gap: 36px; margin-bottom: 10px; opacity: 0; pointer-events: none; transition: opacity 0.35s; }
+#syncChoiceDialog.picked .sync-confirm { opacity: 1; pointer-events: auto; }
+/* the sync page's warning: same look as the yes / no page's (⚠ warning on top, the question, the undone line) */
+.sync-warn { display: flex; flex-direction: column; align-items: center; font-size: 0.9rem; color: var(--muted); text-align: center; }

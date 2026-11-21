@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="44" viewBox="0 0 384 44" role="img" aria-label="powered by Claude Code">
+<style>
+text{font-family:ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;font-size:20px;fill:#8a857d;transform-box:fill-box;transform-origin:center}.cc{fill:#d97757;font-weight:bold}
+.guy rect{fill:#d97757}
+@keyframes l0{0%{opacity:0;transform:translateX(10px) scale(.2)}6.667%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}8.444%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l0{animation:l0 9s linear infinite}
+@keyframes l1{0%{opacity:0;transform:translateX(10px) scale(.2)}7.444%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}9.222%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l1{animation:l1 9s linear infinite}
+@keyframes l2{0%{opacity:0;transform:translateX(10px) scale(.2)}8.222%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}10.000%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l2{animation:l2 9s linear infinite}
+@keyframes l3{0%{opacity:0;transform:translateX(10px) scale(.2)}9.000%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}10.778%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l3{animation:l3 9s linear infinite}
+@keyframes l4{0%{opacity:0;transform:translateX(10px) scale(.2)}9.778%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}11.556%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l4{animation:l4 9s linear infinite}
+@keyframes l5{0%{opacity:0;transform:translateX(10px) scale(.2)}10.556%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}12.333%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l5{animation:l5 9s linear infinite}
+@keyframes l6{0%{opacity:0;transform:translateX(10px) scale(.2)}11.333%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}13.111%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l6{animation:l6 9s linear infinite}
+@keyframes l8{0%{opacity:0;transform:translateX(10px) scale(.2)}12.889%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}14.667%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l8{animation:l8 9s linear infinite}
+@keyframes l9{0%{opacity:0;transform:translateX(10px) scale(.2)}13.667%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}15.444%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l9{animation:l9 9s linear infinite}
+@keyframes l11{0%{opacity:0;transform:translateX(10px) scale(.2)}15.222%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}17.000%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l11{animation:l11 9s linear infinite}
+@keyframes l12{0%{opacity:0;transform:translateX(10px) scale(.2)}16.000%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}17.778%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l12{animation:l12 9s linear infinite}
+@keyframes l13{0%{opacity:0;transform:translateX(10px) scale(.2)}16.778%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}18.556%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l13{animation:l13 9s linear infinite}
+@keyframes l14{0%{opacity:0;transform:translateX(10px) scale(.2)}17.556%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}19.333%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l14{animation:l14 9s linear infinite}
+@keyframes l15{0%{opacity:0;transform:translateX(10px) scale(.2)}18.333%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}20.111%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l15{animation:l15 9s linear infinite}
+@keyframes l16{0%{opacity:0;transform:translateX(10px) scale(.2)}19.111%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}20.889%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l16{animation:l16 9s linear infinite}
+@keyframes l18{0%{opacity:0;transform:translateX(10px) scale(.2)}20.667%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}22.444%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l18{animation:l18 9s linear infinite}
+@keyframes l19{0%{opacity:0;transform:translateX(10px) scale(.2)}21.444%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}23.222%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l19{animation:l19 9s linear infinite}
+@keyframes l20{0%{opacity:0;transform:translateX(10px) scale(.2)}22.222%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}24.000%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l20{animation:l20 9s linear infinite}
+@keyframes l21{0%{opacity:0;transform:translateX(10px) scale(.2)}23.000%{opacity:0;transform:translateX(10px) scale(.2);animation-timing-function:ease-out}24.778%{opacity:1;transform:none}86.667%{opacity:1}91.111%{opacity:0}100%{opacity:0}}.l21{animation:l21 9s linear infinite}
+@keyframes walk{0%{transform:translate(60px,10.0px)}6.667%{transform:translate(60px,10.0px)}23.778%{transform:translate(324px,10.0px)}24.556%{transform:translate(330px,10.0px)}100%{transform:translate(330px,10.0px)}}.walk{animation:walk 9s linear infinite}
+@keyframes implode{0%{opacity:0;transform:scale(1)}3.333%{opacity:0;transform:scale(1)}5.556%{opacity:1;transform:scale(1)}24.556%{opacity:1;transform:scale(1);animation-timing-function:ease-in}25.722%{opacity:1;transform:scale(1.12);animation-timing-function:ease-in}27.889%{opacity:0;transform:scale(0)}100%{opacity:0;transform:scale(0)}}.guy{animation:implode 9s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes stepA{0%{opacity:1}50%{opacity:0}}@keyframes stepB{0%{opacity:0}50%{opacity:1}}.la{animation:stepA .26s step-end infinite}.lb{animation:stepB .26s step-end infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.walk{display:none}}
+</style>
+<text class="l0" x="60" y="28">p</text>
+<text class="l1" x="72" y="28">o</text>
+<text class="l2" x="84" y="28">w</text>
+<text class="l3" x="96" y="28">e</text>
+<text class="l4" x="108" y="28">r</text>
+<text class="l5" x="120" y="28">e</text>
+<text class="l6" x="132" y="28">d</text>
+<text class="l8" x="156" y="28">b</text>
+<text class="l9" x="168" y="28">y</text>
+<text class="l11 cc" x="192" y="28">C</text>
+<text class="l12 cc" x="204" y="28">l</text>
+<text class="l13 cc" x="216" y="28">a</text>
+<text class="l14 cc" x="228" y="28">u</text>
+<text class="l15 cc" x="240" y="28">d</text>
+<text class="l16 cc" x="252" y="28">e</text>
+<text class="l18 cc" x="276" y="28">C</text>
+<text class="l19 cc" x="288" y="28">o</text>
+<text class="l20 cc" x="300" y="28">d</text>
+<text class="l21 cc" x="312" y="28">e</text>
+<g class="walk"><g class="guy"><g transform="scale(2.2)" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="2"/><rect x="4" y="0" width="1" height="2"/><rect x="5" y="0" width="1" height="2"/><rect x="6" y="0" width="1" height="2"/><rect x="7" y="0" width="1" height="2"/><rect x="8" y="0" width="1" height="2"/><rect x="9" y="0" width="1" height="2"/><rect x="10" y="0" width="1" height="2"/><rect x="11" y="0" width="1" height="2"/><rect x="12" y="0" width="1" height="2"/><rect x="13" y="0" width="1" height="2"/><rect x="14" y="0" width="1" height="2"/><rect x="3" y="2" width="1" height="2"/><rect x="4" y="2" width="1" height="2"/><rect x="6" y="2" width="1" height="2"/><rect x="7" y="2" width="1" height="2"/><rect x="8" y="2" width="1" height="2"/><rect x="9" y="2" width="1" height="2"/><rect x="10" y="2" width="1" height="2"/><rect x="11" y="2" width="1" height="2"/><rect x="13" y="2" width="1" height="2"/><rect x="14" y="2" width="1" height="2"/><rect x="1" y="4" width="1" height="2"/><rect x="2" y="4" width="1" height="2"/><rect x="3" y="4" width="1" height="2"/><rect x="4" y="4" width="1" height="2"/><rect x="5" y="4" width="1" height="2"/><rect x="6" y="4" width="1" height="2"/><rect x="7" y="4" width="1" height="2"/><rect x="8" y="4" width="1" height="2"/><rect x="9" y="4" width="1" height="2"/><rect x="10" y="4" width="1" height="2"/><rect x="11" y="4" width="1" height="2"/><rect x="12" y="4" width="1" height="2"/><rect x="13" y="4" width="1" height="2"/><rect x="14" y="4" width="1" height="2"/><rect x="15" y="4" width="1" height="2"/><rect x="16" y="4" width="1" height="2"/><rect x="3" y="6" width="1" height="2"/><rect x="4" y="6" width="1" height="2"/><rect x="5" y="6" width="1" height="2"/><rect x="6" y="6" width="1" height="2"/><rect x="7" y="6" width="1" height="2"/><rect x="8" y="6" width="1" height="2"/><rect x="9" y="6" width="1" height="2"/><rect x="10" y="6" width="1" height="2"/><rect x="11" y="6" width="1" height="2"/><rect x="12" y="6" width="1" height="2"/><rect x="13" y="6" width="1" height="2"/><rect x="14" y="6" width="1" height="2"/><g class="la"><rect x="4" y="8" width="1" height="2"/><rect x="6" y="8" width="1" height="2"/><rect x="11" y="8" width="1" height="2"/><rect x="13" y="8" width="1" height="2"/></g><g class="lb"><rect x="3" y="8" width="1" height="2"/><rect x="5" y="8" width="1" height="2"/><rect x="12" y="8" width="1" height="2"/><rect x="14" y="8" width="1" height="2"/></g></g></g></g>
+</svg>

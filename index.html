@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>stats</title>
+    <meta name="theme-color" content="#141414" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="stats" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <!-- the app icon: a big # in the middle, forest background, whatever the theme -->
+    <link rel="apple-touch-icon" id="touchIcon" href="icon-180.png" />
+    <link rel="icon" type="image/png" id="tabIcon" href="icon-192.png" />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      // settings are applied here, before the page draws, so there's no flash of the wrong colours
+      const THEMES = {
+        dark:   { bg: "#141414", fg: "#ece7df", muted: "#8a857d", card: "#1f1f1f", line: "#333333", scheme: "dark" },
+        light:  { bg: "#f2efe9", fg: "#1a1a1a", muted: "#8a857d", card: "#e6e2da", line: "#cfcac1", scheme: "light" },
+        paper:  { bg: "#efe4cf", fg: "#3a2c1e", muted: "#9a8770", card: "#e3d5bb", line: "#cdbb9c", scheme: "light" },
+        navy:   { bg: "#0f1626", fg: "#e6ecf5", muted: "#7c8aa3", card: "#18223a", line: "#2a3654", scheme: "dark" },
+        forest: { bg: "#121a14", fg: "#e3ecd9", muted: "#7f8f7a", card: "#1b261d", line: "#2d3b2f", scheme: "dark" },
+      };
+      const FONTS = {
+        writer:  { label: "writer mono", css: '"iA Writer Mono", "Courier New", monospace' },
+        courier: { label: "courier", css: '"Courier New", monospace' },
+        sans:    { label: "sans", css: 'system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
+        serif:   { label: "serif", css: 'Georgia, "Times New Roman", serif' },
+        rounded: { label: "rounded", css: 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif' },
+      };
+      // hold times, in ms: 0.1s – 1.5s in 0.1s steps
+      const HOLD_MIN = 100, HOLD_MAX = 1500, HOLD_STEP = 100;
+      const holdOk = (v, fallback) => {
+        const n = Math.round(Number(v) / HOLD_STEP) * HOLD_STEP;
+        // out of range (e.g. saved back when the max was 5s): pulled in to the nearest end
+        return Number.isFinite(n) && n > 0 ? Math.min(HOLD_MAX, Math.max(HOLD_MIN, n)) : fallback;
+      };
+      const SETTINGS_KEY = "stats.settings";
+      const OLD_SETTINGS_KEY = "stats.appearance"; // saved before the rename
+
+      function loadSettings() {
+        try {
+          const l = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? localStorage.getItem(OLD_SETTINGS_KEY)) || {};
+          return {
+            theme: THEMES[l.theme] ? l.theme : "dark",
+            font: FONTS[l.font] ? l.font : "writer",
+            hold: holdOk(l.hold, 500), // hold a stat to open it (the + is fixed at 0.4s, see MENU_HOLD in app.js)
+            // "off" (the default) = no tapping in the list, pause on the stat page only
+            timerPause: ["tap", "double"].includes(l.timerPause) ? l.timerPause : "off",
+            // greyed info on the stat page: created date (on by default), reset count (off by default)
+            showCreated: l.showCreated !== false,
+            showResets: l.showResets === true,
+            showDeleted: l.showDeleted === true, // deleted stats listed at the bottom (off by default)
+            showAge: l.showAge === true, // how long ago the stat was made (off by default)
+            showLogs: l.showLogs === true, // its resets / deletes / restores (off by default)
+            showLast: l.showLast !== false, // its latest +1 / −1 or pause / resume (on by default)
+          };
+        } catch {
+          return { theme: "dark", font: "writer", hold: 500, timerPause: "off", showCreated: true, showResets: false, showDeleted: false, showAge: false, showLogs: false, showLast: true };
+        }
+      }
+
+      function applySettings(settings) {
+        const t = THEMES[settings.theme];
+        const s = document.documentElement.style;
+        s.setProperty("--bg", t.bg);
+        s.setProperty("--fg", t.fg);
+        s.setProperty("--muted", t.muted);
+        s.setProperty("--card", t.card);
+        s.setProperty("--line", t.line);
+        s.setProperty("--font", FONTS[settings.font].css);
+        s.colorScheme = t.scheme;
+        updateBar();
+      }
+
+      // phone status bar matches the page (the first-visit # screen is black too, like the rest of the app)
+      function updateBar() {
+        document.querySelector('meta[name="theme-color"]').content = THEMES[loadSettings().theme].bg;
+      }
+
+      // set the empty / first-visit look before the page draws too
+      try {
+        const saved = JSON.parse(localStorage.getItem("stats.v1") ?? localStorage.getItem("tally.v1"));
+        const hasStats = Array.isArray(saved) && saved.some((s) => !s.deleted);
+        if (!hasStats) document.documentElement.classList.add("empty");
+        if (!hasStats && !localStorage.getItem("stats.seen")) document.documentElement.classList.add("fresh");
+      } catch {
+        document.documentElement.classList.add("empty");
+      }
+      applySettings(loadSettings());
+    </script>
+  </head>
+  <body>
+    <div class="viewing-label" id="viewLabel" hidden><svg class="ic"><use href="#i-eye" /></svg><span id="viewNote">(read-only)</span></div>
+    <div id="list"></div>
+    <button class="star" id="star" aria-label="Add a stat (hold for the menu)">
+      <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>
+    </button>
+    <!-- no stats yet: a small grey hint under the + (hidden whenever the + is) -->
+    <div class="star-hint" aria-hidden="true">(hold for menu)</div>
+    <!-- first visit: a black screen, just the # in the middle.
+         tap the #: "stats" types out after it (tap again: the guide).
+         hold the #: "welcomeback" types out instead (tap: the cloud / import page). hold again to switch back.
+         the line is centred, so the # slides left as the text grows (app.js) -->
+    <div class="intro" id="intro" hidden>
+      <button class="intro-q" id="introHelp" aria-label="stats"><span class="intro-hash" id="introHash">#</span><span id="introRest"></span></button>
+    </div>
+    <button id="viewBack" aria-label="Stop viewing" hidden><svg class="ic"><use href="#i-exit" /></svg></button>
+    <!-- tap the plus: type a name, then pick # (counted) or clock (timed, starts straight away) -->
+    <div class="composer" id="composer" hidden>
+      <input class="newbox" id="newbox" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Stat name" />
+      <div class="kinds">
+        <button id="makeCounter" aria-label="Counted stat"><span class="hash">#</span></button>
+        <button id="makeTimer" aria-label="Timed stat"><svg class="ic"><use href="#i-clock" /></svg></button>
+      </div>
+    </div>
+
+    <!-- icons, used via <use href="#..."> -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M4 17v3h16v-3" /></symbol>
+      <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M4 17v3h16v-3" /></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" /></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></symbol>
+      <!-- "not resets / not deletes" (the last action info bubble): the icon with a red cross over it -->
+      <symbol id="i-reset-x" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" /><path d="M5 5l14 14M19 5L5 19" style="stroke: var(--danger)" /></symbol>
+      <symbol id="i-trash-x" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /><path d="M5 5l14 14M19 5L5 19" style="stroke: var(--danger)" /></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></symbol>
+      <!-- leave: square door frame + arrow, sharp corners -->
+      <symbol id="i-exit" viewBox="0 0 24 24"><path d="M10 3H3v18h7M15 7l5 5-5 5M20 12H9" stroke-linejoin="miter" stroke-linecap="square" /></symbol>
+      <!-- plus (add a stat): straight lines, square ends -->
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" stroke-linecap="square" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.01" /></symbol>
+      <!-- restore: an undo arrow (different from reset's circle) -->
+      <symbol id="i-restore" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="square" stroke-linejoin="miter" /></symbol>
+      <!-- browsers, as simple line drawings in the app's style: Safari's compass, Chrome's ring -->
+      <symbol id="i-safari" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5Z" /><path d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21" /></symbol>
+      <symbol id="i-chrome" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" /><path d="M12 8.5h8.2M9 13.8L4.9 6.7M15 13.8l-4.1 7.1" /></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2" /><path d="M10.5 18h3" /></symbol>
+      <!-- full app reset: a phone, with a red cross over it -->
+      <symbol id="i-phone-x" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2" /><path d="M10.5 18h3" /><path d="M4 6l16 12M20 6L4 18" style="stroke: var(--danger)" /></symbol>
+      <!-- caution: a triangle with an ! -->
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5L2.5 20h19Z" /><path d="M12 10v4.5M12 17.5v.01" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></symbol>
+      <!-- stop sharing: the eye, with a red cross over it -->
+      <symbol id="i-eye-x" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /><path d="M5 5l14 14M19 5L5 19" style="stroke: var(--danger)" /></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10.5a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.3 9.1 4.5 4.5 0 0 0 7 18Z" /></symbol>
+      <!-- log out: the cloud, with a red line through it -->
+      <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M7 18h10.5a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.3 9.1 4.5 4.5 0 0 0 7 18Z" /><path d="M4 4l16 16" style="stroke: var(--danger)" /></symbol>
+      <!-- login fields: email = envelope, password = key, repeat password = the repeat arrows + the key -->
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5" /><path d="M3.5 6.5 12 13l8.5-6.5" /></symbol>
+      <symbol id="i-key" viewBox="0 0 24 24"><circle cx="6" cy="12" r="4" /><path d="M10 12h11.5M17.5 12v3.5M21 12v2.5" /></symbol>
+      <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M3 12h17M14 6l6 6-6 6" /></symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></symbol>
+      <symbol id="i-colour" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" /></symbol>
+      <!-- the walkthrough's pointing glove, as an outline -->
+      <symbol id="i-finger" viewBox="0 0 24 24"><path d="M7.6 2.6a1.45 1.45 0 0 1 2.9 0V9.6a1.4 1.4 0 0 1 2.8 0v.7a1.4 1.4 0 0 1 2.8 0v.8a1.35 1.35 0 0 1 2.7 0V16c0 2-.7 3.5-2 4.6v2H9.4v-2c-.9-.7-1.6-1.5-2.3-2.5L3.7 14.6a1.45 1.45 0 0 1 2.2-1.9l1.7 1.8Z" /><path d="M10.5 9.6v3M13.3 10.3v2.5M16.1 11.1v2.2" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5Z" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14" /></symbol>
+      <symbol id="i-press" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor" /><circle cx="12" cy="12" r="8" stroke-dasharray="3 3" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 10v12M15 5.88L14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="M17 14V2M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></symbol>
+    </svg>
+
+    <!-- hold a row; counted: tap the big number to add, − to subtract; timed: tap the time to pause / resume.
+         reset and delete ask yes / no first; tap any empty space to close -->
+    <dialog id="editDialog">
+      <!-- tap the name to rename it (it turns into a text field) -->
+      <button id="editName" aria-label="Rename"></button>
+      <input id="editNameInput" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="New name" hidden />
+      <button id="editCount"></button>
+      <div class="edit-row">
+        <button id="resetBtn" aria-label="Reset"><svg class="ic"><use href="#i-reset" /></svg></button>
+        <button id="deleteBtn" class="danger" aria-label="Delete"><svg class="ic"><use href="#i-trash" /></svg></button>
+        <button id="minusBtn" aria-label="Subtract one">−</button>
+        <!-- timed stats only: add time by hand -->
+        <button id="addTimeBtn" aria-label="Add time" hidden>+</button>
+        <!-- only on a deleted stat's page -->
+        <button id="restoreBtn" aria-label="Restore" hidden><svg class="ic"><use href="#i-restore" /></svg></button>
+        <button id="purgeBtn" class="danger" aria-label="Delete permanently" hidden><svg class="ic"><use href="#i-trash" /></svg></button>
+      </div>
+      <!-- greyed info under the buttons; each line can be turned off in settings (info) -->
+      <div class="edit-meta">
+        <div id="editCreated"></div>
+        <div id="editAge" hidden></div>
+        <div id="editLast" hidden></div>
+        <div id="editResets"></div>
+        <div id="editDeleted" hidden></div>
+        <!-- show logs: resets / deletes / restores, newest first -->
+        <ul id="editLog" class="edit-log" hidden></ul>
+      </div>
+    </dialog>
+
+    <!-- timed stat → +: add time by hand (e.g. forgot to start "sleep" last night). hours, minutes, seconds only -->
+    <dialog id="addTimeDialog" class="page">
+      <div class="choices">
+        <div class="confirm-text" id="addTimeText"></div>
+        <div class="hms">
+          <label><input id="addH" type="number" inputmode="numeric" min="0" max="99" placeholder="0" aria-label="Hours" /><span>h</span></label>
+          <label><input id="addM" type="number" inputmode="numeric" min="0" max="59" placeholder="0" aria-label="Minutes" /><span>m</span></label>
+          <label><input id="addS" type="number" inputmode="numeric" min="0" max="59" placeholder="0" aria-label="Seconds" /><span>s</span></label>
+        </div>
+        <div class="icons">
+          <button id="addTimeYes" aria-label="Add"><svg class="ic"><use href="#i-plus" /></svg></button>
+          <button id="addTimeNo" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- yes / no page: reset, delete, replacing stats on import (see ask()) -->
+    <dialog id="zeroDialog" class="page">
+      <div class="choices" id="confirmView">
+        <div id="confirmText"></div>
+        <div class="icons">
+          <!-- 👍 / 👎, or (some questions) words instead, e.g. "keep" / "delete" (ask() in app.js) -->
+          <button id="yesBtn" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg><span class="ask-word" id="yesWord"></span></button>
+          <button id="noBtn" class="muted" aria-label="No"><svg class="ic"><use id="noIcon" href="#i-down" /></svg><span class="ask-word" id="noWord"></span></button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- hold the star: cloud, import / export (one page), settings (the ? guide is in there) -->
+    <!-- hold the +: the menu, a full page. tap any empty space to go back to the list -->
+    <dialog id="menuDialog" class="page">
+      <div class="icons">
+        <button id="accountBtn" aria-label="Account"><svg class="ic"><use href="#i-cloud" /></svg></button>
+        <button id="exportBtn" class="pair" aria-label="Import / export"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></button>
+        <button id="settingsBtn" aria-label="Settings"><span class="glyph">A</span></button>
+      </div>
+    </dialog>
+
+    <!-- logging in, with stats both on this device and in the cloud: which copy wins? one page, in steps (cloud.js):
+         1. the login fades to black, a short empty pause, then "sync to" + 📱 ☁ fade in
+         2. tap one: an arrow shows where the data goes (📱 ← ☁ or 📱 → ☁), "sync to" fades into the warning, 👍 👎 appear
+         3. 👍 connects. 👎 goes back to step 2's choice. exit (any time) = don't connect -->
+    <dialog id="syncChoiceDialog" class="page">
+      <div class="sync-page">
+        <!-- the title and the warning share one spot and cross-fade -->
+        <div class="sync-head">
+          <div class="sync-title">sync to</div>
+          <div class="sync-warn confirm-text rich" aria-live="polite"><span class="ask-head"><svg class="ic"><use href="#i-warn" /></svg><b>warning</b></span><span id="syncWarnText">delete all local data?</span><span class="undone">(<u>this action cannot be undone</u>)</span></div>
+        </div>
+        <div class="icons sync-choice">
+          <button id="syncToPhone" class="labeled" aria-label="Sync to phone: the cloud's copy replaces this device's"><svg class="ic"><use href="#i-phone" /></svg><span class="sub">phone</span></button>
+          <!-- where the data goes: points right (phone → cloud), flipped for cloud → phone -->
+          <svg class="ic sync-arrow" aria-hidden="true"><use href="#i-arrow" /></svg>
+          <button id="syncToCloud" class="labeled" aria-label="Sync to cloud: this device's copy replaces the cloud's"><svg class="ic"><use href="#i-cloud" /></svg><span class="sub">cloud</span></button>
+        </div>
+        <div class="icons sync-confirm">
+          <button id="syncYes" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg></button>
+          <button id="syncNo" class="muted" aria-label="No"><svg class="ic"><use href="#i-down" /></svg></button>
+        </div>
+        <div class="icons"><button id="syncChoiceBack" class="muted" aria-label="Cancel"><svg class="ic"><use href="#i-exit" /></svg></button></div>
+      </div>
+    </dialog>
+
+    <!-- menu → cloud: log in (or register) to sync your stats. see cloud.js -->
+    <dialog id="accountDialog" class="page">
+      <!-- logged in only, at the top: the phone and the cloud on their cables (the same plug as the login), plugged
+           together while online, apart while offline. offline, tap it to choose which copy wins when back online: the
+           winning side stays bright (cloud = the cloud's copy comes down, phone = this device's goes up) (cloud.js).
+           on log out the rest fades away, then they come apart and fade -->
+      <svg class="account-cloud plug" id="accountCloud" viewBox="0 0 82 24" role="button" aria-label="When back online: cloud or phone wins" hidden>
+        <g class="plug-a">
+          <rect x="0" y="4" width="9" height="16" rx="1.8" />
+          <path d="M3.5 16.5h2" />
+          <path d="M9 12h7" />
+          <path d="M16 7a5 5 0 0 1 0 10Z" />
+        </g>
+        <g class="plug-b">
+          <path d="M45 4a8 8 0 0 1 0 16" />
+          <path d="M53 12h7" />
+          <use href="#i-cloud" x="58" y="0" width="24" height="24" />
+        </g>
+      </svg>
+      <form class="login" id="loginForm">
+        <!-- each field shows its icon in the middle while it's empty (placeholder=" " lets the CSS tell when it's empty) -->
+        <label class="field"><input id="loginEmail" type="email" autocomplete="username" placeholder=" " aria-label="Email" /><span class="ph" aria-hidden="true"><svg class="ic"><use href="#i-mail" /></svg></span></label>
+        <label class="field"><input id="loginPassword" type="password" autocomplete="current-password" placeholder=" " aria-label="Password" /><span class="ph" aria-hidden="true"><svg class="ic"><use href="#i-key" /></svg></span></label>
+        <!-- register mode only: the password again, so a typo doesn't lock you out of a new account -->
+        <label class="field" id="loginRepeatField" hidden><input id="loginRepeat" type="password" autocomplete="new-password" placeholder=" " aria-label="Repeat password" /><span class="ph" aria-hidden="true"><svg class="ic"><use href="#i-repeat" /></svg><svg class="ic"><use href="#i-key" /></svg></span></label>
+        <div class="icons">
+          <!-- connect: the phone and the cloud, each on a short cable, slide together and couple when tapped
+               (apart again if it fails): a small half-circle, and a bigger one that closes around it (same centre once joined) -->
+          <button type="submit" class="plug-btn" id="plugBtn" aria-label="Connect">
+            <svg class="plug" viewBox="0 0 82 24" aria-hidden="true">
+              <g class="plug-a">
+                <rect x="0" y="4" width="9" height="16" rx="1.8" />  <!-- phone -->
+                <path d="M3.5 16.5h2" />                             <!--   its home bar -->
+                <path d="M9 12h7" />                                 <!-- cable -->
+                <path d="M16 7a5 5 0 0 1 0 10Z" />                   <!-- small half-circle, round side out -->
+              </g>
+              <g class="plug-b">
+                <path d="M45 4a8 8 0 0 1 0 16" />                    <!-- outer half-circle, open towards the small one -->
+                <path d="M53 12h7" />                                <!-- cable -->
+                <use href="#i-cloud" x="58" y="0" width="24" height="24" />  <!-- the cloud -->
+              </g>
+            </svg>
+          </button>
+        </div>
+        <!-- what happened: "check your email…", "email confirmed…", or what went wrong -->
+        <div class="login-msg" id="loginMsg"></div>
+        <!-- switches the form between logging in and making a new account (confirmed by email) -->
+        <button type="button" class="login-mode" id="loginMode">new? register</button>
+      </form>
+      <div class="account-in" id="accountIn" hidden>
+        <div class="account-email" id="accountEmail"></div>
+        <div class="login-msg" id="accountState"></div>
+        <!-- live view: a read-only page (live.html?u=username) anyone with the link can watch.
+             not shared: type a username, tap the eye. shared: open it · copy the link · stop sharing (eye, red cross) -->
+        <div class="share">
+          <input class="share-name" id="shareName" maxlength="20" placeholder="view ID" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-label="View id for your live view" />
+          <div class="icons share-icons">
+            <button id="shareBtn" aria-label="Share live view"><svg class="ic"><use href="#i-eye" /></svg></button>
+            <button id="openShare" aria-label="Open live view" hidden><svg class="ic"><use href="#i-eye" /></svg></button>
+            <button id="copyShare" aria-label="Copy link" hidden><svg class="ic"><use id="copyIcon" href="#i-copy" /></svg></button>
+            <button id="stopShare" aria-label="Deactivate live view" hidden><svg class="ic"><use href="#i-eye-x" /></svg></button>
+          </div>
+          <div class="login-msg" id="shareMsg"></div>
+        </div>
+      </div>
+      <!-- log out (logged in only: a cloud with a red line through it) next to back -->
+      <div class="icons account-icons">
+        <button id="logoutBtn" aria-label="Log out" hidden><svg class="ic"><use href="#i-cloud-off" /></svg></button>
+        <button id="accountBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+
+    <!-- first visit → "second time?": bring your stats in, from the cloud (log in) or a backup file (import).
+         off-white like the first-visit page -->
+
+    <dialog id="startDialog" class="page">
+      <div class="icons start-icons">
+        <button id="startCloud" aria-label="Connect to the cloud"><svg class="ic"><use href="#i-cloud" /></svg></button>
+        <button id="startImport" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg></button>
+        <button id="startBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <!-- menu → import / export -->
+    <dialog id="exportDialog" class="page">
+      <div class="icons" id="exportChoices">
+        <button id="importBtn" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg></button>
+        <button id="exportOnly" aria-label="Export"><svg class="ic"><use href="#i-export" /></svg></button>
+        <!-- full app reset: a phone with a red cross through it -->
+        <button id="exportClear" aria-label="Full app reset"><svg class="ic"><use href="#i-phone-x" /></svg></button>
+        <button id="exportCancel" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+      <!-- after picking full app reset -->
+      <div class="choices" id="exportConfirm" hidden>
+        <div class="confirm-text">delete all <b>stats</b> and <b>settings</b> locally? this can't be undone.</div>
+        <div class="icons">
+          <button id="exportYes" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg></button>
+          <button id="exportNo" class="muted" aria-label="No"><svg class="ic"><use href="#i-down" /></svg></button>
+        </div>
+      </div>
+    </dialog>
+    <input type="file" id="importFile" accept="application/json,.json" hidden />
+
+    <!-- settings page: each setting is one line; tap it to drop down the choices.
+         only the exit button leaves (back to the menu) -->
+    <dialog id="settingsDialog" class="page">
+     <div class="settings">
+      <!-- tap a line's icon (not its words): a one-line bubble saying what it's for (data-tip) -->
+      <div class="set-tip" id="setTip" role="tooltip"></div>
+      <!-- font: the chosen font is always the top line, the rest listed under it.
+           picking one slides it up to the top and the list folds away -->
+      <div class="setting" id="fontSetting">
+        <span class="set-ic font-ic" role="button" aria-label="What is this?" data-tip="the typeface used.">Aa</span>
+        <svg class="ic chev font-chev"><use href="#i-chev" /></svg>
+        <div class="font-list" id="fontList" role="listbox" aria-label="Font"></div>
+      </div>
+      <div class="setting">
+        <button class="set-head" aria-label="Colours"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="the colour theme used."><use href="#i-colour" /></svg><span class="set-val" id="themeVal"></span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <div class="set-body"><div class="set-inner"><div class="swatches" id="themeList"></div></div></div>
+      </div>
+      <!-- hold: how long you hold a stat (counted or timed) to open its page. the + is fixed at 0.4s -->
+      <div class="setting">
+        <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="how long you hold a stat to open its page."><use href="#i-press" /></svg><span class="set-val" id="holdVal">0.5s</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <div class="set-body"><div class="set-inner">
+          <div class="stepper hold-stepper" id="holdStepper"><button data-step="hold:-1" aria-label="Shorter">−</button><span id="holdNum"></span><button data-step="hold:1" aria-label="Longer">+</button></div>
+        </div></div>
+      </div>
+      <!-- pause: how timers are paused in the list. 0 = off (only on the stat page), 1 = tap, 2 = double tap.
+           the line shows the number chosen; the choices are just 0 1 2, then "taps" -->
+      <div class="setting">
+        <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="pause a {clock} stat straight from the list: 0-2 taps."><use href="#i-pause" /></svg><span class="set-val" id="pauseVal">0</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <div class="set-body"><div class="set-inner">
+          <div class="modes">
+            <button data-mode="timerPause:off" aria-label="No tapping, pause on the stat page only">0</button>
+            <button data-mode="timerPause:tap" aria-label="Tap to pause">1</button>
+            <button data-mode="timerPause:double" aria-label="Double tap to pause">2</button>
+            <span class="modes-unit">taps</span>
+          </div>
+        </div></div>
+      </div>
+      <!-- info: which greyed lines show on the stat page. each turns on / off on its own -->
+      <div class="setting">
+        <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="extra details shown on a stat's page, and toggle deleted stats list."><use href="#i-info" /></svg><span class="set-val">more</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <div class="set-body"><div class="set-inner">
+          <!-- checkboxes, one per line, each on / off by itself. the ⓘ after each explains it (a bubble, doesn't tick) -->
+          <div class="checks">
+            <div class="check-row"><button class="box" data-toggle="showCreated" role="checkbox" aria-label="creation time"><svg><use href="#i-check" /></svg></button><span>creation time</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="when the stat was made."><use href="#i-info" /></svg></div>
+            <div class="check-row"><button class="box" data-toggle="showAge" role="checkbox" aria-label="stat age"><svg><use href="#i-check" /></svg></button><span>stat age</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="time stat has been active. {restore} resets age."><use href="#i-info" /></svg></div>
+            <div class="check-row"><button class="box" data-toggle="showLast" role="checkbox" aria-label="last action"><svg><use href="#i-check" /></svg></button><span>last action</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="the last action of the stat ({noreset} {nodelete})."><use href="#i-info" /></svg></div>
+            <div class="check-row"><button class="box" data-toggle="showResets" role="checkbox" aria-label="reset count"><svg><use href="#i-check" /></svg></button><span>reset count</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="how many times the stat has been {reset}."><use href="#i-info" /></svg></div>
+            <div class="check-row"><button class="box" data-toggle="showLogs" role="checkbox" aria-label="show logs"><svg><use href="#i-check" /></svg></button><span>show logs</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="a list of the stat's {reset}, {delete} and {restore}."><use href="#i-info" /></svg></div>
+            <div class="check-row"><button class="box" data-toggle="showDeleted" role="checkbox" aria-label="view deleted"><svg><use href="#i-check" /></svg></button><span>view deleted</span><svg class="ic check-ic" role="button" aria-label="What is this?" data-tip="lists deleted stats."><use href="#i-info" /></svg></div>
+          </div>
+        </div></div>
+      </div>
+      <!-- the ? guide, and the way out (back to the menu) -->
+      <div class="icons settings-end">
+        <button id="helpBtn" aria-label="How to use"><span class="glyph">?</span></button>
+        <button class="muted" id="settingsDone" aria-label="Done"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+     </div>
+    </dialog>
+
+    <!-- first-timer guide → "add": how to add it to the home screen, one link per browser, each a Google search for its
+         own steps (just Safari and Chrome: the ones trusted to work as a home screen web app). exit goes back to the guide -->
+    <dialog id="addHomeDialog" class="page">
+      <div class="add-home">
+        <ul class="browsers">
+          <li style="--i: 0"><a href="https://www.google.com/search?q=how+to+add+a+website+to+home+screen+safari+on+ios" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-safari" /></svg>Safari</a></li>
+          <li style="--i: 1"><a href="https://www.google.com/search?q=how+to+add+a+website+to+home+screen+chrome+on+android%2Fios" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-chrome" /></svg>Chrome</a></li>
+        </ul>
+        <button class="add-home-back" id="addHomeBack" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <dialog id="helpDialog">
+      <!-- animated walkthrough, driven by runDemo() -->
+      <div class="demo" id="demo" aria-hidden="true">
+        <div class="d-row" id="dRowC" hidden><span class="d-name" id="dNameC">counted</span><span class="d-count" id="dCountC">0</span></div>
+        <div class="d-row" id="dRowT" hidden><span class="d-name" id="dNameT">timed</span><span class="d-count timer" id="dCountT">0s</span></div>
+        <div class="d-star" id="dStar"><svg class="ic"><use href="#i-plus" /></svg></div>
+        <div class="d-compose" id="dBox" hidden>
+          <div class="d-typed"><span id="dTyped"></span><span class="d-caret"></span></div>
+          <div class="d-kinds">
+            <span id="dKStar"><span class="hash">#</span></span>
+            <span id="dKClock"><svg class="ic"><use href="#i-clock" /></svg></span>
+          </div>
+        </div>
+        <div class="d-pop" id="dPop">
+          <div class="d-name" id="dPopName"></div>
+          <div class="d-big" id="dBig">3</div>
+          <div class="d-btns"><span id="dReset"><svg class="ic"><use href="#i-reset" /></svg></span><span class="danger" id="dTrash"><svg class="ic"><use href="#i-trash" /></svg></span><span id="dMinus">−</span></div>
+        </div>
+        <div class="d-zero" id="dZero">
+          <div class="d-ask" id="dAsk"></div>
+          <div class="d-zbtns">
+            <span class="danger" id="dYes"><svg class="ic"><use href="#i-up" /></svg></span>
+            <span class="muted"><svg class="ic"><use href="#i-down" /></svg></span>
+          </div>
+        </div>
+        <!-- the menu (hold the +) -->
+        <div class="d-menu" id="dMenu">
+          <span><svg class="ic"><use href="#i-cloud" /></svg></span>
+          <span class="d-pair"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></span>
+          <span class="glyph">A</span>
+        </div>
+        <!-- a soft dip between scenes, so a jump to another page doesn't look like something the app does on its own -->
+        <div class="d-cut" id="dCut"></div>
+        <div class="d-finger" id="dFinger">
+          <svg viewBox="0 0 24 24">
+            <!-- glove: index finger up, three curled fingers, thumb on the left, cuff at the wrist -->
+            <path d="M7.6 2.6a1.45 1.45 0 0 1 2.9 0V9.6a1.4 1.4 0 0 1 2.8 0v.7a1.4 1.4 0 0 1 2.8 0v.8a1.35 1.35 0 0 1 2.7 0V16c0 2-.7 3.5-2 4.6v2H9.4v-2c-.9-.7-1.6-1.5-2.3-2.5L3.7 14.6a1.45 1.45 0 0 1 2.2-1.9l1.7 1.8Z" />
+            <path d="M10.5 9.6v3M13.3 10.3v2.5M16.1 11.1v2.2M9.4 20.6h7.4" fill="none" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- first visit only: "add" opens the add-to-home-screen links (addHomeDialog) -->
+      <p class="first-only">For best user-experience, <button class="help-link" id="helpAdd">add</button> this webpage to your homescreen.</p>
+      <!-- first visit only (instead of the thumbs up): the cloud login, or on to the empty + page -->
+      <p class="first-only">To sync online click <button class="help-link" id="helpSync">here</button>, or continue <button class="help-link" id="helpOffline">offline</button>.</p>
+      <p class="tight">Hold <svg class="ic"><use href="#i-plus" /></svg> to open menu.</p>
+      <ul class="legend">
+        <!-- tap: the cloud sync info, full screen (cloudInfoDialog) -->
+        <li><button class="legend-btn" id="cloudInfoBtn"><svg class="ic"><use href="#i-cloud" /></svg>cloud sync</button></li>
+        <!-- tap: the import / export info, full screen (dataInfoDialog) -->
+        <li><button class="legend-btn" id="dataInfoBtn"><span class="duo"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></span>import / export JSON</button></li>
+        <li><b>A</b>settings</li>
+      </ul>
+      <!-- first visit only, at the bottom: "powered by Claude Code" types itself out, with the little guy as the cursor
+           (welcome.js, started when this first-timer version opens) -->
+      <div class="welcome-pb first-only" aria-label="powered by Claude Code">
+        <span class="pb-text" aria-hidden="true">powered by <b>Claude Code</b><svg class="clawd" id="clawd" viewBox="0 0 18 10" shape-rendering="crispEdges"></svg></span>
+      </div>
+
+      <button class="done" id="helpDone" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+    </dialog>
+
+    <!-- ? guide → import / export in the icon row: full screen, no border. back (or tapping anywhere) returns to the guide.
+         (importing replaces this device's stats + settings; connected, that change uploads and replaces the cloud's too) -->
+    <dialog id="dataInfoDialog" class="page">
+      <div class="cloud-info">
+        <h2 class="info-title">for offline use</h2>
+        <p>import/export JSON with all stats and settings.</p>
+        <p>importing overrides all data (cloud, if sync is on + local).</p>
+      </div>
+      <div class="icons">
+        <button id="dataInfoBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <!-- ? guide → the cloud in the icon row: cloud sync + live view, full screen, no border. "here" deletes everything of yours in the cloud (cloud.js).
+         back (or tapping anywhere else) returns to the guide -->
+    <dialog id="cloudInfoDialog" class="page">
+      <div class="cloud-info">
+        <h2 class="info-title">for online use</h2>
+        <p>connects to backend via Supabase.</p>
+        <!-- how syncing works: your changes go up; logging in and opening / coming back to the app bring the cloud's copy down -->
+        <p>change in data is upload-only.</p>
+        <p>refresh is download-only.</p>
+        <p>login: you choose phone or cloud.</p>
+        <!-- "here" is only a button while connected; otherwise it's plain text -->
+        <p>delete cloud data <button class="help-link" id="cloudDeleteBtn">here</button>.</p>
+        <p><svg class="ic"><use href="#i-eye" /></svg> to display stats live, ID must be unique.</p>
+      </div>
+      <div class="icons">
+        <button id="cloudInfoBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <!-- in this order: app.js is the core, the rest build on it, start.js kicks everything off -->
+    <script src="app.js"></script>
+    <script src="demo.js"></script>
+    <script src="settings.js"></script>
+    <script src="welcome.js"></script>
+    <script src="cloud.js"></script>
+    <script src="start.js"></script>
+  </body>
+</html>
