@@ -3,7 +3,7 @@
   <a><img src="assets/title.svg" alt="#stats" width="560"></a>
 </p>
 
-A tiny tracker for counting anything. Tap **+** to make a stat: a **#** counts (coffees, push-ups, glasses of water), a **clock** times (reading, practice, a fast). Tap a stat to add one, hold it to open its page with reset, delete and the details. It all lives on your device and works offline. If you want it on more than one device, you can sync it to the cloud and share a read-only live view. You can also import and export everything as JSON.
+A tiny tracker for counting anything. Tap **+** to make a stat: a **#** counts, a **clock** times. It all lives on your device and works offline. If you want it on more than one device, you can sync it to the cloud (via Supabase). You can also import and export everything as JSON.
 
 It's a web app made for your phone. Open it in Safari or Chrome and **add it to your home screen**, and it runs full screen like a native app.
 
