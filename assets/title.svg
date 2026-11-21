@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="170" viewBox="0 0 640 170" role="img" aria-label="#stats">
+<style>
+text{font-family:ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;font-size:68px;fill:#ece7df}.hash{font-weight:bold}.w{font-style:italic;font-weight:normal}
+@keyframes t0{0%{opacity:0}15.000%{opacity:1}78.200%{opacity:0}100%{opacity:0}}.t0{animation:t0 10s step-end infinite}
+@keyframes t1{0%{opacity:0}15.550%{opacity:1}77.650%{opacity:0}100%{opacity:0}}.t1{animation:t1 10s step-end infinite}
+@keyframes t2{0%{opacity:0}16.100%{opacity:1}77.100%{opacity:0}100%{opacity:0}}.t2{animation:t2 10s step-end infinite}
+@keyframes t3{0%{opacity:0}16.650%{opacity:1}76.550%{opacity:0}100%{opacity:0}}.t3{animation:t3 10s step-end infinite}
+@keyframes t4{0%{opacity:0}17.200%{opacity:1}76.000%{opacity:0}100%{opacity:0}}.t4{animation:t4 10s step-end infinite}
+@keyframes slide{0%{transform:translateX(299.6px)}15.000%{transform:translateX(279.2px)}15.550%{transform:translateX(258.8px)}16.100%{transform:translateX(238.4px)}16.650%{transform:translateX(218.0px)}17.200%{transform:translateX(197.6px)}76.000%{transform:translateX(218.0px)}76.550%{transform:translateX(238.4px)}77.100%{transform:translateX(258.8px)}77.650%{transform:translateX(279.2px)}78.200%{transform:translateX(299.6px)}100%{transform:translateX(299.6px)}}.line{animation:slide 10s step-end infinite}
+@keyframes pop{0%{opacity:0;transform:scale(0)}4.000%{opacity:0;transform:scale(0);animation-timing-function:cubic-bezier(.3,1.6,.5,1)}9.000%{opacity:1;transform:scale(1)}83.750%{opacity:1;transform:scale(1);animation-timing-function:ease-in}86.750%{opacity:0;transform:scale(0)}100%{opacity:0;transform:scale(0)}}.hash{animation:pop 10s linear infinite;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.line{transform:translateX(197.6px)}}
+</style>
+<rect width="640" height="170" rx="26" fill="#141414"/>
+<g class="line">
+<text class="hash" x="0" y="109.5">#</text>
+<text class="w t0" x="40.8" y="109.5">s</text>
+<text class="w t1" x="81.6" y="109.5">t</text>
+<text class="w t2" x="122.4" y="109.5">a</text>
+<text class="w t3" x="163.2" y="109.5">t</text>
+<text class="w t4" x="204.0" y="109.5">s</text>
+</g>
+</svg>

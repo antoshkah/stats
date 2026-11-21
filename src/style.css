@@ -2,18 +2,18 @@
    in index.html sets from your settings before the page draws */
 @font-face {
   font-family: "iA Writer Mono";
-  src: url("../fonts/ia-writer-mono-latin-400-normal.ttf") format("truetype");
+  src: url("fonts/ia-writer-mono-latin-400-normal.ttf") format("truetype");
   font-weight: 400;
 }
 @font-face {
   font-family: "iA Writer Mono";
-  src: url("../fonts/ia-writer-mono-latin-700-normal.ttf") format("truetype");
+  src: url("fonts/ia-writer-mono-latin-700-normal.ttf") format("truetype");
   font-weight: 700;
 }
 /* the real italic (e.g. "stats" on the welcome page), instead of a slanted fake */
 @font-face {
   font-family: "iA Writer Mono";
-  src: url("../fonts/ia-writer-mono-latin-400-italic.ttf") format("truetype");
+  src: url("fonts/ia-writer-mono-latin-400-italic.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
 }
