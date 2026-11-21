@@ -345,10 +345,11 @@
     <!-- menu → import / export -->
     <dialog id="exportDialog" class="page">
       <div class="icons" id="exportChoices">
-        <button id="importBtn" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg></button>
-        <button id="exportOnly" aria-label="Export"><svg class="ic"><use href="#i-export" /></svg></button>
+        <!-- each option has a small grey word under it (like the ? guide's legend); the exit doesn't -->
+        <button id="importBtn" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg><span class="opt-label" aria-hidden="true">import</span></button>
+        <button id="exportOnly" aria-label="Export"><svg class="ic"><use href="#i-export" /></svg><span class="opt-label" aria-hidden="true">export</span></button>
         <!-- full app reset: a phone with a red cross through it -->
-        <button id="exportClear" aria-label="Full app reset"><svg class="ic"><use href="#i-phone-x" /></svg></button>
+        <button id="exportClear" aria-label="Full app reset"><svg class="ic"><use href="#i-phone-x" /></svg><span class="opt-label" aria-hidden="true">clear local</span></button>
         <button id="exportCancel" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
       </div>
       <!-- after picking full app reset -->

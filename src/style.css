@@ -161,8 +161,13 @@ dialog.page > * { width: min(100%, 300px); }
 .icons button[hidden] { display: none; }
 /* 👍 👎 sit close together, centred */
 #confirmView .icons, #exportConfirm .icons { justify-content: center; gap: 36px; }
-/* export page: a little wider so the labels under the icons have room */
-#exportChoices { width: min(100%, 340px); }
+/* export page: one column down the middle, buttons a little bigger than the usual 52px */
+#exportChoices { flex-direction: column; align-items: center; gap: 14px; }
+#exportChoices button { width: 62px; height: 62px; }
+#exportChoices .ic { width: 31px; height: 31px; }
+/* the options with a word under the icon: taller, the word small and grey like the ? guide's legend */
+#exportChoices button:has(.opt-label) { width: auto; min-width: 62px; height: auto; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#exportChoices .opt-label { font-size: 0.75rem; line-height: 1.3; color: var(--muted); white-space: nowrap; }
 
 /* plain text button lists (zero, menu, intro) */
 .choices { display: grid; }
@@ -176,16 +181,16 @@ dialog.page > * { width: min(100%, 300px); }
 .icons button { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; }
 .ic { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .glyph { font-size: 1.9rem; font-weight: 900; line-height: 1; }
-/* the menu: a full page (class "page"), its icons in a row in the middle */
-#menuDialog .icons { width: min(100%, 320px); }
-/* a bit bigger than the icons on the smaller pages, now that the menu has the whole screen */
-#menuDialog .icons button { width: 64px; height: 64px; }
-#menuDialog .icons .ic { width: 32px; height: 32px; }
-#menuDialog .icons button.pair { width: 88px; }
-#menuDialog .icons button.pair .ic { width: 30px; height: 30px; }
-#menuDialog .glyph { font-size: 2.3rem; }
+/* the menu: a full page (class "page"), its icons in one column down the middle */
+#menuDialog .icons { flex-direction: column; align-items: center; gap: 18px; }
+/* bigger than the icons on the smaller pages, now that the menu has the whole screen */
+#menuDialog .icons button { width: 76px; height: 76px; }
+#menuDialog .icons .ic { width: 38px; height: 38px; }
+#menuDialog .icons button.pair { width: 104px; }
+#menuDialog .icons button.pair .ic { width: 36px; height: 36px; }
+#menuDialog .glyph { font-size: 2.75rem; }
 /* the cloud only fills the middle of its drawing, so it gets a bigger box to look the same size as the others */
-#menuDialog #accountBtn .ic { width: 40px; height: 40px; }
+#menuDialog #accountBtn .ic { width: 48px; height: 48px; }
 #helpDialog .legend .duo { display: flex; height: 44px; align-items: center; }
 #helpDialog .legend .duo .ic { width: 30px; height: 30px; }
 .icons button.pair { width: 72px; padding: 0; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 2px; }
@@ -422,7 +427,7 @@ body.viewing .row .count { cursor: default; }
 }
 .d-pop.on, .d-zero.on, .d-menu.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 /* the menu: a small box over the dimmed list, like the real one */
-.d-menu { display: flex; gap: 2px; padding: 4px; }
+.d-menu { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; } /* vertical, like the real menu */
 .d-menu span { width: 30px; height: 30px; display: grid; place-items: center; }
 .d-menu .ic { width: 16px; height: 16px; }
 .d-menu .glyph { font-size: 1.05rem; }
