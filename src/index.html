@@ -149,6 +149,9 @@
            the menu's way to the cloud. draw it in an <svg class="plug"> (wide: 85 × 24). a symbol clips to its viewBox,
            so it starts 1.5 left of the phone: room for the phone's outline -->
       <symbol id="i-plug" viewBox="-1.5 0 85 24"><rect x="0" y="4" width="9" height="16" rx="1.8" /><path d="M3.5 16.5h2M9 12h7M16 7a5 5 0 0 1 0 10ZM45 4a8 8 0 0 1 0 16M53 12h7" /><use href="#i-cloud" x="58" y="0" width="24" height="24" /></symbol>
+      <!-- the same plug, plugged in (each side 14.5 closer, as at the end of the login's animation): logged in.
+           the plugs with class "plug-state" switch between the two (cloud.js) -->
+      <symbol id="i-plug-in" viewBox="-1.5 0 85 24"><rect x="14.5" y="4" width="9" height="16" rx="1.8" /><path d="M18 16.5h2M23.5 12h7M30.5 7a5 5 0 0 1 0 10ZM30.5 4a8 8 0 0 1 0 16M38.5 12h7" /><use href="#i-cloud" x="43.5" y="0" width="24" height="24" /></symbol>
       <!-- log out: the cloud, with a red line through it -->
       <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M7 18h10.5a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.3 9.1 4.5 4.5 0 0 0 7 18Z" /><path d="M4 4l16 16" style="stroke: var(--danger)" /></symbol>
       <!-- login fields: email = envelope, password = key, repeat password = the repeat arrows + the key -->
@@ -232,7 +235,7 @@
     <!-- hold the +: the menu, a full page: cloud, live view, settings (the ? guide is in there). tap any empty space to go back to the list -->
     <dialog id="menuDialog" class="page">
       <div class="icons">
-        <button id="accountBtn" aria-label="Cloud"><svg class="plug" aria-hidden="true"><use href="#i-plug" /></svg></button>
+        <button id="accountBtn" aria-label="Cloud"><svg class="plug" aria-hidden="true"><use class="plug-state" href="#i-plug" /></svg></button>
         <button id="viewBtn" aria-label="Live view"><svg class="ic"><use href="#i-eye" /></svg></button>
         <button id="settingsBtn" aria-label="Settings"><span class="glyph">A</span></button>
       </div>
@@ -484,7 +487,7 @@
         </div>
         <!-- the menu (hold the +) -->
         <div class="d-menu" id="dMenu">
-          <span class="d-plug"><svg class="plug"><use href="#i-plug" /></svg></span>
+          <span class="d-plug"><svg class="plug"><use class="plug-state" href="#i-plug" /></svg></span>
           <span><svg class="ic"><use href="#i-eye" /></svg></span>
           <span class="glyph">A</span>
         </div>
@@ -506,7 +509,7 @@
       <p class="tight">Hold <svg class="ic"><use href="#i-plus" /></svg> to open menu.</p>
       <ul class="legend">
         <!-- tap: the cloud sync info, full screen (cloudInfoDialog) -->
-        <li><button class="legend-btn" id="cloudInfoBtn"><svg class="plug"><use href="#i-plug" /></svg>cloud sync</button></li>
+        <li><button class="legend-btn" id="cloudInfoBtn"><svg class="plug"><use class="plug-state" href="#i-plug" /></svg>cloud sync</button></li>
         <li><svg class="ic"><use href="#i-eye" /></svg>live view</li>
         <li><b>A</b>settings</li>
       </ul>

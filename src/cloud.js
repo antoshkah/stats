@@ -379,9 +379,14 @@ $("stopShare").onclick = () =>
     renderView();
   });
 
+// the plug icons (menu, guide, demo): plugged in while logged in, apart while logged out
+function updatePlugIcons() {
+  for (const u of document.querySelectorAll("use.plug-state")) u.setAttribute("href", session ? "#i-plug-in" : "#i-plug");
+}
 // ── the account page (menu → cloud) ──
 function renderAccount() {
   const inside = !!session;
+  updatePlugIcons(); // (this runs on every log in / out, and when a login runs out)
   $("loginForm").hidden = inside;
   $("accountIn").hidden = !inside;
   $("logoutBtn").hidden = !inside;
@@ -714,4 +719,5 @@ document.addEventListener("visibilitychange", () => {
 setInterval(() => {
   if (document.visibilityState === "visible" && navigator.onLine) cloudStart(true);
 }, 60 * 1000);
+updatePlugIcons();
 setTimeout(cloudStart, 0);
