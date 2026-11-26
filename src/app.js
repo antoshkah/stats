@@ -748,7 +748,7 @@ for (const d of document.querySelectorAll("dialog")) {
   });
 }
 
-// how to use: the ? in settings (or on the first visit's intro)
+// how to use: settings → demo (or the first visit's intro)
 // opened from settings: tapping any empty space on the guide goes back to settings
 let helpFromMenu = false;
 $("helpBtn").onclick = () => {

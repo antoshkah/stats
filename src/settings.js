@@ -1,4 +1,5 @@
-// settings page: font, colours, hold, pause. loadSettings / applySettings / THEMES / FONTS live in
+// settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
+// stat settings = hold, pause, info. loadSettings / applySettings / THEMES / FONTS live in
 // the inline script in index.html's <head>, so the look is applied before the page draws
 
 // settings
@@ -121,31 +122,47 @@ function closeDropdowns() {
 for (const head of document.querySelectorAll(".set-head")) {
   head.onclick = () => head.parentElement.classList.toggle("open");
 }
+// menu → settings: the three pages to pick from (appearance, stat settings, the demo)
 $("settingsBtn").onclick = () => {
   $("menuDialog").close();
-  closeDropdowns();
-  orderFonts(false);
-  renderSettings();
   show($("settingsDialog"));
 };
 // the exit button is the only way out, and it goes back to the menu
 $("settingsDone").onclick = () => {
-  hideTip();
   $("settingsDialog").close();
   show($("menuDialog"));
 };
-$("settingsDialog").addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
+// settings → appearance (font, colours) / stat settings (hold, pause, info…): exit goes back to settings
+const SETTING_PAGES = ["appearanceDialog", "statSettingsDialog"];
+function openSettingPage(id) {
+  $("settingsDialog").close();
+  closeDropdowns();
+  orderFonts(false);
+  renderSettings();
+  show($(id));
+}
+$("appearanceBtn").onclick = () => openSettingPage("appearanceDialog");
+$("statSetBtn").onclick = () => openSettingPage("statSettingsDialog");
+for (const b of document.querySelectorAll(".set-back")) {
+  b.onclick = () => {
+    hideTip();
+    b.closest("dialog").close();
+    show($("settingsDialog"));
+  };
+}
+for (const id of ["settingsDialog", ...SETTING_PAGES]) $(id).addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
 
 // tap a line's icon (not its words) → a bubble under it saying what that line is for.
-// goes away after 5s, or on the next tap anywhere
+// goes away after 5s, or on the next tap anywhere. each settings page has its own bubble
 let tipTimer = null;
 let tipFor = null;
 function hideTip() {
-  $("setTip").classList.remove("on");
+  for (const t of document.querySelectorAll(".set-tip")) t.classList.remove("on");
   tipFor = null;
 }
 function showTip(icon) {
-  const tip = $("setTip");
+  hideTip();
+  const tip = icon.closest(".settings").querySelector(".set-tip");
   const box = tip.parentElement.getBoundingClientRect();
   const r = icon.getBoundingClientRect();
   // plain text, except {clock} becomes the clock icon (e.g. "a {clock} stat" = a timed stat)
@@ -179,14 +196,16 @@ function showTip(icon) {
   clearTimeout(tipTimer);
   tipTimer = setTimeout(hideTip, 5000);
 }
-for (const icon of document.querySelectorAll("#settingsDialog [data-tip]")) {
+for (const icon of document.querySelectorAll(".settings [data-tip]")) {
   icon.addEventListener("click", (e) => {
     e.stopPropagation(); // the icon explains; it doesn't open the drop-down
     if (tipFor === icon) hideTip();
     else showTip(icon);
   });
 }
-$("settingsDialog").addEventListener("pointerdown", (e) => {
-  if (!e.target.closest("[data-tip]")) hideTip();
-});
-$("settingsDialog").addEventListener("close", hideTip);
+for (const id of SETTING_PAGES) {
+  $(id).addEventListener("pointerdown", (e) => {
+    if (!e.target.closest("[data-tip]")) hideTip();
+  });
+  $(id).addEventListener("close", hideTip);
+}

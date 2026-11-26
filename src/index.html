@@ -367,12 +367,23 @@
     </dialog>
     <input type="file" id="importFile" accept="application/json,.json" hidden />
 
-    <!-- settings page: each setting is one line; tap it to drop down the choices.
-         only the exit button leaves (back to the menu) -->
+    <!-- menu → settings: three pages to pick from (appearance, stat settings, the demo / ? guide), each with a small
+         grey word under it. only the exit button leaves (back to the menu) -->
     <dialog id="settingsDialog" class="page">
+      <div class="icons settings-hub">
+        <button id="appearanceBtn" aria-label="Appearance"><span class="glyph">Aa</span><span class="opt-label" aria-hidden="true">appearance</span></button>
+        <button id="statSetBtn" aria-label="Stat settings"><span class="glyph">#</span><span class="opt-label" aria-hidden="true">stat settings</span></button>
+        <button id="helpBtn" aria-label="Demo"><span class="glyph">?</span><span class="opt-label" aria-hidden="true">demo</span></button>
+        <button class="muted" id="settingsDone" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <!-- settings → appearance / stat settings: each setting is one line; tap it to drop down the choices.
+         only the exit button leaves (back to the settings page) -->
+    <dialog id="appearanceDialog" class="page">
      <div class="settings">
       <!-- tap a line's icon (not its words): a one-line bubble saying what it's for (data-tip) -->
-      <div class="set-tip" id="setTip" role="tooltip"></div>
+      <div class="set-tip" role="tooltip"></div>
       <!-- font: the chosen font is always the top line, the rest listed under it.
            picking one slides it up to the top and the list folds away -->
       <div class="setting" id="fontSetting">
@@ -384,6 +395,15 @@
         <button class="set-head" aria-label="Colours"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="the colour theme used."><use href="#i-colour" /></svg><span class="set-val" id="themeVal"></span><svg class="ic chev"><use href="#i-chev" /></svg></button>
         <div class="set-body"><div class="set-inner"><div class="swatches" id="themeList"></div></div></div>
       </div>
+      <div class="icons settings-end">
+        <button class="muted set-back" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+     </div>
+    </dialog>
+
+    <dialog id="statSettingsDialog" class="page">
+     <div class="settings">
+      <div class="set-tip" role="tooltip"></div>
       <!-- hold: how long you hold a stat (counted or timed) to open its page. the + is fixed at 0.4s -->
       <div class="setting">
         <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="how long you hold a stat to open its page."><use href="#i-press" /></svg><span class="set-val" id="holdVal">0.5s</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
@@ -419,10 +439,8 @@
           </div>
         </div></div>
       </div>
-      <!-- the ? guide, and the way out (back to the menu) -->
       <div class="icons settings-end">
-        <button id="helpBtn" aria-label="How to use"><span class="glyph">?</span></button>
-        <button class="muted" id="settingsDone" aria-label="Done"><svg class="ic"><use href="#i-exit" /></svg></button>
+        <button class="muted set-back" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
       </div>
      </div>
     </dialog>

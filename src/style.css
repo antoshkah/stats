@@ -576,8 +576,14 @@ body.viewing .row .count { cursor: default; }
   font-size: 1.1rem;
 }
 .swatches button.on { outline: 2px solid var(--fg); outline-offset: 2px; }
-/* bottom of settings: ? (the guide) next to the exit */
-#settingsDialog .settings-end { justify-content: center; gap: 24px; margin-top: 4px; }
+/* bottom of a settings page: the exit, in the middle */
+.settings .settings-end { justify-content: center; gap: 24px; margin-top: 4px; }
+/* settings: appearance · stat settings · demo, one column down the middle, a small grey word under each (like the
+   ? guide's legend); the exit doesn't have one */
+.settings-hub { flex-direction: column; align-items: center; gap: 14px; }
+.settings-hub button:has(.opt-label) { width: auto; min-width: 62px; height: auto; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.settings-hub .glyph { font-size: 2.2rem; }
+.opt-label { font-size: 0.75rem; font-weight: normal; line-height: 1.3; color: var(--muted); white-space: nowrap; }
 
 /* settings: tap a line's icon for a small bubble saying what that line is for */
 .set-ic[data-tip] { cursor: help; }
@@ -605,7 +611,7 @@ body.viewing .row .count { cursor: default; }
 }
 .set-tip.on { opacity: 1; translate: 0 0; visibility: visible; }
 /* nothing in settings may widen the page past the screen */
-#settingsDialog { overflow-x: hidden; }
+#appearanceDialog, #statSettingsDialog { overflow-x: hidden; }
 /* the little point, aimed at the icon */
 .set-tip::before {
   content: "";
