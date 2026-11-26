@@ -61,6 +61,9 @@ button { touch-action: manipulation; } /* no double-tap zoom when tapping fast *
   flex-direction: column;
 }
 .empty #list { display: none; }
+/* logged in, the cloud's copy not down yet: "loading…" / "no connection" where the list will be */
+.list-msg { font-size: 0.9rem; font-weight: normal; color: var(--muted); }
+.list-msg[hidden] { display: none; }
 .row {
   display: flex;
   align-items: center;
@@ -336,10 +339,8 @@ body.viewing .row .count { cursor: default; }
 #helpDialog .legend .legend-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; font-size: inherit; color: inherit; }
 /* "To sync online click here." only in the first-visit version of the guide */
 #helpDialog:not(.first) .first-only { display: none; }
-#helpDialog.first #helpDone { display: none; } /* first visit: "continue offline" is the way on instead */
-/* …and with the thumbs up hidden, "powered by Claude Code" is the last thing showing: it takes the bottom auto margin,
-   so the guide stays centred top-to-bottom (otherwise it all sinks to the bottom) */
-#helpDialog.first .welcome-pb { margin-top: 28px; margin-bottom: auto; }
+/* first visit: "powered by Claude Code" under the text, then the exit (back to the # screen) */
+#helpDialog.first .welcome-pb { margin-top: 28px; }
 #helpDialog .first-only { margin-top: 4px; }
 #helpDialog .first-only .help-link { color: inherit; font-weight: bold; }
 /* "here" on the cloud info page */
@@ -742,9 +743,7 @@ body.viewing .row .count { cursor: default; }
 #accountDialog .account-cloud[hidden] { display: none; }
 .account-cloud.plugged .plug-a { transform: translateX(14.5px); }
 .account-cloud.plugged .plug-b { transform: translateX(-14.5px); }
-/* offline (apart): the side that wins when back online stays bright, the other dims */
 .account-cloud .plug-a, .account-cloud .plug-b { transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.25s; }
-.account-cloud.wins-phone .plug-b, .account-cloud.wins-cloud .plug-a { opacity: 0.35; }
 /* tapped while online (nothing to choose): a quick shake */
 #accountDialog .account-cloud.nope { animation: nope 0.3s; }
 @keyframes nope { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }

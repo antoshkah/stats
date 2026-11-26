@@ -34,13 +34,5 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-if (isNew()) {
-  $("star").hidden = true;
-  $("intro").hidden = false;
-}
-render();
-// automatic resets that came due while the app was closed (logged in: after the first sync instead, cloud.js)
-if (!session) autoResets();
-
-// first visit: the # screen (app.js) — the # pops in, "stats" under it
-if (isNew()) playIntro();
+// logged out: the # screen (the # pops in). logged in: "loading…" until the cloud's copy is down (cloud.js)
+showHome();

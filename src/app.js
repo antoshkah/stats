@@ -1,9 +1,8 @@
 // stats: the core app. stats + timers, the list, adding a stat, the stat page, yes / no page.
-// loads first; demo.js, settings.js, welcome.js and start.js build on it.
+// loads first; demo.js, settings.js, welcome.js, cloud.js and start.js build on it.
+// cloud-only: your stats and settings live in your account (cloud.js) and nothing is kept on the device. logged
+// out, the app is the # screen; logged in, it's your list, once the cloud's copy has come down
 
-const KEY = "stats.v1";
-const OLD_KEY = "tally.v1"; // data saved before the rename
-const SEEN_KEY = "stats.seen";
 const $ = (id) => document.getElementById(id);
 
 // counted stat: { id, name, kind: "counter", created, count, highest, deleted?, log }
@@ -13,17 +12,8 @@ const $ = (id) => document.getElementById(id);
 // either can also have hideView: true (left out of the live view), and autoReset: true + autoSince (resets itself
 // each new day / week / month, see autoResets)
 // the log only holds resets and deletes; deleted stats are kept (hidden) so their history survives (and syncs)
-let stats = load();
-
-function load() {
-  try {
-    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY);
-    const data = JSON.parse(raw) || [];
-    return Array.isArray(data) ? data.map(normalize) : [];
-  } catch {
-    return [];
-  }
-}
+// (filled in by cloud.js when the cloud's copy comes down; kept in memory only)
+let stats = [];
 
 // accepts any saved / synced shape, including older versions that logged every tap
 function normalize(s) {
@@ -136,19 +126,17 @@ function record(stat, action) {
   save();
 }
 
+// every change goes up to the cloud a moment later (cloud.js); nothing is written to the device
 function save() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(stats));
-  } catch {}
-  if (typeof cloudQueue === "function") cloudQueue(); // logged in: copy the change up to the cloud (cloud.js loads last)
+  if (typeof cloudQueue === "function") cloudQueue();
 }
 
 // ── automatic resets (stat settings → auto reset: day / week / month, and per stat: which ones) ──
 // a stat switched on resets once each new day / week / month (your local time; weeks start on monday), like
 // tapping reset: logged, and a running timer keeps running from zero. it's due when nothing has started it off
 // since the current period began: not a reset, not being made or restored (created), not being switched on (autoSince).
-// offline it runs on opening and every minute. logged in, only straight after a sync with the cloud (cloud.js), so
-// an old copy on this device is never reset and sent up over newer changes from another device
+// it runs straight after each sync with the cloud (cloud.js: opening, coming back to the app, and every minute), so
+// it always resets the cloud's latest copy, never an out-of-date one that would then go up over newer changes
 function periodStart(kind, now = new Date()) {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // today, 00:00 local
   if (kind === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back to monday
@@ -179,26 +167,18 @@ function restartAutoResets() {
   }
   if (changed) save();
 }
-setInterval(() => {
-  if (typeof session === "undefined" || !session) autoResets(); // (logged in: cloud.js runs it after each sync)
-}, 60 * 1000);
 
-// first-timers see an i instead of the star until they've read the guide or synced
-function isNew() {
-  try {
-    return !localStorage.getItem(SEEN_KEY) && visible().length === 0;
-  } catch {
-    return false;
-  }
-}
-function markSeen() {
-  try {
-    localStorage.setItem(SEEN_KEY, "1");
-  } catch {}
-  $("intro").hidden = true;
-  $("star").hidden = false;
-  document.documentElement.classList.remove("fresh"); // off-white → dark
-  updateBar();
+// logged out: the # screen instead of the list and the + (session lives in cloud.js)
+const isNew = () => typeof session === "undefined" || !session;
+// the main screen for where you are: logged out → the # screen. logged in → your list and the +, or (the cloud's
+// copy not down yet) "loading…" / "no connection" in place of the list (see render)
+function showHome() {
+  const out = isNew();
+  $("intro").hidden = !out;
+  $("star").hidden = out || !cloudLoaded();
+  $("composer").hidden = true;
+  if (out) playIntro();
+  render();
 }
 
 // calls onLong after a hold: the hold time in settings (0.5s by default), or a fixed ms if given; swallows the click that follows
@@ -298,6 +278,10 @@ function render() {
   document.documentElement.classList.toggle("empty", shown.length === 0);
   document.documentElement.classList.toggle("fresh", isNew());
   updateBar();
+  // logged in, the cloud's copy not down yet: say why the list is empty ("loading…" / "no connection", cloud.js)
+  const waiting = !isNew() && !cloudLoaded();
+  $("listMsg").hidden = !waiting;
+  if (waiting) $("listMsg").textContent = cloudLoadMsg();
 
   timerEls = [];
   for (const stat of shown) {
@@ -690,7 +674,7 @@ $("restoreBtn").onclick = () => {
     if (navigator.vibrate) navigator.vibrate(10);
   });
 };
-// deleted stat → delete for good: gone from localStorage entirely, history and all
+// deleted stat → delete for good: gone from the cloud entirely, history and all
 $("purgeBtn").onclick = () => {
   const stat = editing;
   if (!stat || !stat.deleted) return;
@@ -794,40 +778,13 @@ $("helpBtn").onclick = () => {
   show($("helpDialog"));
   $("helpDialog").scrollTop = 0;
 };
-// 👍 or tapping empty space: back to settings if it was opened from there, otherwise (first visit) to the list
+// exit or tapping empty space: back to settings if it was opened from there, otherwise (first visit) the # screen
 const leaveHelp = () => {
   $("helpDialog").close();
   if (helpFromMenu) show($("settingsDialog"));
 };
 $("helpDone").onclick = leaveHelp;
-// first visit: "continue offline" → closes the guide onto the empty + page
-$("helpOffline").onclick = leaveHelp;
 $("helpDialog").addEventListener("click", (e) => {
   if (!helpFromMenu || e.target.closest("button, a")) return;
   leaveHelp();
 });
-// closing the first-timer guide counts the first visit as done, except when leaving the login opened from it
-// without logging in: that goes back to the # screen (helpKeepsIntro, cloud.js)
-let helpKeepsIntro = false;
-$("helpDialog").addEventListener("close", () => {
-  if (helpKeepsIntro) helpKeepsIntro = false;
-  else markSeen();
-});
-
-// wipes everything this app keeps in localStorage (stats, settings, cloud login, first-visit flags), then
-// reloads. only this app's keys: the rest of the site shares localStorage.
-// keepSeen: the first-visit flags stay, so it comes back to the normal + screen (empty), not the welcome
-// (disconnecting from the cloud, cloud.js). keepSession: still logged in, so the cloud's copy comes back down
-// on the reload (clearing the local cache while connected, settings.js)
-function wipeLocal(keepSeen = false, keepSession = false) {
-  const keep = [...(keepSeen ? [SEEN_KEY, WELCOME_KEY] : []), ...(keepSession ? ["stats.session"] : [])];
-  try {
-    const mine = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if ((k.startsWith("stats.") || k.startsWith("tally.")) && !keep.includes(k)) mine.push(k);
-    }
-    for (const k of mine) localStorage.removeItem(k);
-  } catch {}
-  location.reload();
-}

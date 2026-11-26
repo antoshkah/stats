@@ -1,8 +1,5 @@
 // the first visit's extras: the little Claude Code guy and "powered by Claude Code" at the bottom of the first-timer guide
 
-// (still used by wipeLocal in app.js: an old flag from the welcome page, cleared with the rest)
-const WELCOME_KEY = "stats.welcomed";
-
 // the Claude Code mascot in pixels: 18 × 5, each pixel twice as tall as wide (like terminal blocks)
 (function drawClawd() {
   const body = [

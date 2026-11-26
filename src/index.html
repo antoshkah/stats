@@ -36,12 +36,11 @@
         // out of range (e.g. saved back when the max was 5s): pulled in to the nearest end
         return Number.isFinite(n) && n > 0 ? Math.min(HOLD_MAX, Math.max(HOLD_MIN, n)) : fallback;
       };
-      const SETTINGS_KEY = "stats.settings";
-      const OLD_SETTINGS_KEY = "stats.appearance"; // saved before the rename
-
-      function loadSettings() {
+      // settings live in the cloud with your stats (nothing is kept on the device): this turns what came down (or {},
+      // logged out / not loaded yet) into a full set, anything missing or odd falling back to the default
+      function loadSettings(saved) {
         try {
-          const l = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? localStorage.getItem(OLD_SETTINGS_KEY)) || {};
+          const l = saved && typeof saved === "object" ? saved : {};
           return {
             theme: THEMES[l.theme] ? l.theme : "dark",
             font: FONTS[l.font] ? l.font : "writer",
@@ -63,7 +62,9 @@
         }
       }
 
+      let appliedTheme = "dark";
       function applySettings(settings) {
+        appliedTheme = settings.theme;
         const t = THEMES[settings.theme];
         const s = document.documentElement.style;
         s.setProperty("--bg", t.bg);
@@ -78,22 +79,23 @@
 
       // phone status bar matches the page (the first-visit # screen is black too, like the rest of the app)
       function updateBar() {
-        document.querySelector('meta[name="theme-color"]').content = THEMES[loadSettings().theme].bg;
+        document.querySelector('meta[name="theme-color"]').content = THEMES[appliedTheme].bg;
       }
 
-      // set the empty / first-visit look before the page draws too
+      // before the page draws: nothing's loaded yet ("empty"), and logged out it's the # screen ("fresh").
+      // the login is the one thing the device keeps (cloud.js)
+      document.documentElement.classList.add("empty");
       try {
-        const saved = JSON.parse(localStorage.getItem("stats.v1") ?? localStorage.getItem("tally.v1"));
-        const hasStats = Array.isArray(saved) && saved.some((s) => !s.deleted);
-        if (!hasStats) document.documentElement.classList.add("empty");
-        if (!hasStats && !localStorage.getItem("stats.seen")) document.documentElement.classList.add("fresh");
+        if (!localStorage.getItem("stats.session")) document.documentElement.classList.add("fresh");
       } catch {
-        document.documentElement.classList.add("empty");
+        document.documentElement.classList.add("fresh");
       }
       applySettings(loadSettings());
     </script>
   </head>
   <body>
+    <!-- logged in, before your stats have come down from the cloud: "loading…" / "no connection" (app.js render) -->
+    <div class="list-msg" id="listMsg" hidden></div>
     <div id="list"></div>
     <button class="star" id="star" aria-label="Add a stat (hold for the menu)">
       <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>
@@ -227,7 +229,7 @@
           <button id="yesBtn" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg><span class="ask-word" id="yesWord"></span></button>
           <button id="noBtn" class="muted" aria-label="No"><svg class="ic"><use id="noIcon" href="#i-down" /></svg><span class="ask-word" id="noWord"></span></button>
         </div>
-        <!-- only when 👎 does something of its own (e.g. disconnect: keep / delete): exit = neither, just go back -->
+        <!-- only when 👎 does something of its own (it isn't just "no"): exit = neither, just go back -->
         <div class="icons ask-exit" id="askExitRow" hidden>
           <button id="askExit" class="muted" aria-label="Cancel"><svg class="ic"><use href="#i-exit" /></svg></button>
         </div>
@@ -243,7 +245,8 @@
       </div>
     </dialog>
 
-    <!-- logging in, with stats both on this device and in the cloud: which copy wins? one page, in steps (cloud.js):
+    <!-- logging in with stats still on this device from before the app went cloud-only, and stats in the cloud too:
+         which copy wins? (only ever once: after that nothing is kept on the device.) one page, in steps (cloud.js):
          1. the login fades to black, a short empty pause, then "sync to" + 📱 ☁ fade in
          2. tap one: an arrow shows where the data goes (📱 ← ☁ or 📱 → ☁), "sync to" fades into the warning, 👍 👎 appear
          3. 👍 connects. 👎 goes back to step 2's choice. exit (any time) = don't connect -->
@@ -438,7 +441,8 @@
           <div class="stat-opts" id="statOpts"></div>
         </div></div>
       </div>
-      <!-- clear local cache (a phone with a red cross over it; asks first), next to the exit -->
+      <!-- clear local cache (a phone with a red cross over it; asks first), next to the exit. your stats aren't kept on
+           the device, so this is the app's own files: cleared, then it reloads them fresh (settings.js) -->
       <div class="icons settings-end">
         <button id="clearLocal" aria-label="Clear local cache"><svg class="ic"><use href="#i-phone-x" /></svg></button>
         <button class="muted set-back" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
@@ -502,8 +506,8 @@
 
       <!-- first visit only: "add" opens the add-to-home-screen links (addHomeDialog) -->
       <p class="first-only">For best user-experience, <button class="help-link" id="helpAdd">add</button> this webpage to your homescreen.</p>
-      <!-- first visit only (instead of the thumbs up): the cloud login, or on to the empty + page -->
-      <p class="first-only">To sync online click <button class="help-link" id="helpSync">here</button>, or continue <button class="help-link" id="helpOffline">offline</button>.</p>
+      <!-- first visit only: the cloud login (back from it: the # screen) -->
+      <p class="first-only">Your stats live in the cloud: log in <button class="help-link" id="helpSync">here</button> to start.</p>
       <p class="tight">Hold <svg class="ic"><use href="#i-plus" /></svg> to open menu.</p>
       <ul class="legend">
         <!-- tap: the cloud sync info, full screen (cloudInfoDialog) -->
@@ -528,7 +532,7 @@
         <!-- how syncing works: your changes go up; logging in and opening / coming back to the app bring the cloud's copy down -->
         <p>change in data is upload-only.</p>
         <p>refresh is download-only.</p>
-        <p>login: you choose phone or cloud.</p>
+        <p>nothing is stored on this device.</p>
         <!-- "here" is only a button while connected; otherwise it's plain text -->
         <p>delete cloud data <button class="help-link" id="cloudDeleteBtn">here</button>.</p>
         <p><svg class="ic"><use href="#i-eye" /></svg> to display stats live, ID must be unique.</p>

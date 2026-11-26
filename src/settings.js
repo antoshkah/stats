@@ -1,16 +1,14 @@
 // settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
 // stat settings = hold, pause, info, auto reset (and which stats), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
-// the inline script in index.html's <head>, so the look is applied before the page draws
+// the inline script in index.html's <head>. settings live in the cloud with your stats: the defaults until the
+// cloud's copy comes down (cloud.js), every change goes back up, and nothing is kept on the device
 
 // settings
 let settings = loadSettings();
 function saveSettings() {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {}
   applySettings(settings);
   renderSettings();
-  if (typeof cloudQueue === "function") cloudQueue(); // logged in: copy the change up to the cloud (cloud.js loads last)
+  if (typeof cloudQueue === "function") cloudQueue(); // up to the cloud (cloud.js loads last)
 }
 const holdLabel = (ms) => `${(ms / 1000).toFixed(1)}s`;
 // font list: one button per font, made once and only ever reordered (chosen font first)
@@ -196,20 +194,19 @@ for (const b of document.querySelectorAll(".set-back")) {
 }
 for (const id of ["settingsDialog", ...SETTING_PAGES]) $(id).addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
 
-// stat settings → clear local cache (asks first). connected: this device's copy goes, the login stays, and the
-// cloud's copy comes back down on the reload (a change not sent yet goes up first). not connected: this device
-// is all there is, so stats and settings are gone for good and it starts over from the first visit
+// stat settings → clear local cache (asks first). your stats and settings aren't on the device (they're in the
+// cloud), so what's cleared is the app's own files the device keeps for opening fast (sw.js). a change not sent
+// yet goes up first; then it reloads, fetching the app fresh and your stats from the cloud. you stay logged in
 const WARN = '<span class="ask-head"><svg class="ic"><use href="#i-warn" /></svg><b>warning</b></span>';
 $("clearLocal").onclick = () => {
   hideTip();
-  const connected = typeof session !== "undefined" && !!session; // (cloud.js loads after this file)
-  if (connected) {
-    return ask(`${WARN}clear the local cache? your <b>stats</b> and <b>settings</b> download again from the cloud.`, async () => {
-      if (pending && !isOffline()) await cloudPush();
-      wipeLocal(true, true);
-    }, true);
-  }
-  ask(`${WARN}delete all <b>stats</b> and <b>settings</b> on this device?<span class="undone">(<u>this action cannot be undone</u>)</span>`, () => wipeLocal(), true);
+  ask(`${WARN}clear the local cache? the app reloads fresh. your <b>stats</b> and <b>settings</b> stay in the cloud.`, async () => {
+    if (pending && !isOffline()) await cloudPush();
+    try {
+      for (const k of await caches.keys()) await caches.delete(k);
+    } catch {}
+    location.reload();
+  }, true);
 };
 
 // tap a line's icon (not its words) → a bubble under it saying what that line is for.
