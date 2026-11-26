@@ -782,26 +782,12 @@ $("helpDialog").addEventListener("close", markSeen);
 // import / export page: import, export, or full app reset (asks yes / no first)
 $("exportBtn").onclick = () => {
   $("menuDialog").close();
-  $("exportChoices").hidden = false;
-  $("exportConfirm").hidden = true;
   show($("exportDialog"));
 };
-// cancel / no step back to the menu instead of closing everything
-const backToMenu = () => {
+// cancel steps back to the menu instead of closing everything
+$("exportCancel").onclick = () => {
   $("exportDialog").close();
   show($("menuDialog"));
-};
-$("exportCancel").onclick = backToMenu;
-// no to the full app reset: back to the import / export choices
-$("exportNo").onclick = () => {
-  $("exportConfirm").hidden = true;
-  $("exportChoices").hidden = false;
-  document.activeElement.blur();
-};
-$("exportClear").onclick = () => {
-  $("exportChoices").hidden = true;
-  $("exportConfirm").hidden = false;
-  document.activeElement.blur();
 };
 $("exportOnly").onclick = () => {
   $("exportDialog").close();
@@ -809,11 +795,12 @@ $("exportOnly").onclick = () => {
 };
 
 // wipes everything this app keeps in localStorage (stats, settings, cloud login, first-visit flags), then
-// starts over as a first visit. only this app's keys: the rest of the site shares localStorage.
-// used by the full app reset. disconnecting from the cloud (cloud.js) passes keepSeen: the first-visit flags
-// stay, so it comes back to the normal + screen (empty), not the welcome
-function wipeLocal(keepSeen = false) {
-  const keep = keepSeen ? [SEEN_KEY, WELCOME_KEY] : [];
+// reloads. only this app's keys: the rest of the site shares localStorage.
+// keepSeen: the first-visit flags stay, so it comes back to the normal + screen (empty), not the welcome
+// (disconnecting from the cloud, cloud.js). keepSession: still logged in, so the cloud's copy comes back down
+// on the reload (clearing the local cache while connected, settings.js)
+function wipeLocal(keepSeen = false, keepSession = false) {
+  const keep = [...(keepSeen ? [SEEN_KEY, WELCOME_KEY] : []), ...(keepSession ? ["stats.session"] : [])];
   try {
     const mine = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -824,11 +811,6 @@ function wipeLocal(keepSeen = false) {
   } catch {}
   location.reload();
 }
-$("exportYes").onclick = () => {
-  $("exportDialog").close();
-  wipeLocal();
-};
-
 // backup files use 3-letter keys; the app works with the full names. where the first three letters clash,
 // it's the first letter + the start of the next word (showCreated → scr, timerPause → tpa)
 const SHORT_KEYS = {

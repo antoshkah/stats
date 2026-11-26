@@ -352,17 +352,7 @@
         <!-- each option has a small grey word under it (like the ? guide's legend); the exit doesn't -->
         <button id="importBtn" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg><span class="opt-label" aria-hidden="true">import</span></button>
         <button id="exportOnly" aria-label="Export"><svg class="ic"><use href="#i-export" /></svg><span class="opt-label" aria-hidden="true">export</span></button>
-        <!-- full app reset: a phone with a red cross through it -->
-        <button id="exportClear" aria-label="Full app reset"><svg class="ic"><use href="#i-phone-x" /></svg><span class="opt-label" aria-hidden="true">clear local</span></button>
         <button id="exportCancel" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
-      </div>
-      <!-- after picking full app reset -->
-      <div class="choices" id="exportConfirm" hidden>
-        <div class="confirm-text">delete all <b>stats</b> and <b>settings</b> locally? this can't be undone.</div>
-        <div class="icons">
-          <button id="exportYes" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg></button>
-          <button id="exportNo" class="muted" aria-label="No"><svg class="ic"><use href="#i-down" /></svg></button>
-        </div>
       </div>
     </dialog>
     <input type="file" id="importFile" accept="application/json,.json" hidden />
@@ -439,7 +429,9 @@
           </div>
         </div></div>
       </div>
+      <!-- clear local cache (a phone with a red cross over it; asks first), next to the exit -->
       <div class="icons settings-end">
+        <button id="clearLocal" aria-label="Clear local cache"><svg class="ic"><use href="#i-phone-x" /></svg></button>
         <button class="muted set-back" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
       </div>
      </div>

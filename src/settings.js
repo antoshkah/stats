@@ -152,6 +152,22 @@ for (const b of document.querySelectorAll(".set-back")) {
 }
 for (const id of ["settingsDialog", ...SETTING_PAGES]) $(id).addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
 
+// stat settings → clear local cache (asks first). connected: this device's copy goes, the login stays, and the
+// cloud's copy comes back down on the reload (a change not sent yet goes up first). not connected: this device
+// is all there is, so stats and settings are gone for good and it starts over from the first visit
+const WARN = '<span class="ask-head"><svg class="ic"><use href="#i-warn" /></svg><b>warning</b></span>';
+$("clearLocal").onclick = () => {
+  hideTip();
+  const connected = typeof session !== "undefined" && !!session; // (cloud.js loads after this file)
+  if (connected) {
+    return ask(`${WARN}clear the local cache? your <b>stats</b> and <b>settings</b> download again from the cloud.`, async () => {
+      if (pending && !isOffline()) await cloudPush();
+      wipeLocal(true, true);
+    }, true);
+  }
+  ask(`${WARN}delete all <b>stats</b> and <b>settings</b> on this device?<span class="undone">(<u>this action cannot be undone</u>)</span>`, () => wipeLocal(), true);
+};
+
 // tap a line's icon (not its words) → a bubble under it saying what that line is for.
 // goes away after 5s, or on the next tap anywhere. each settings page has its own bubble
 let tipTimer = null;
