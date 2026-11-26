@@ -4,7 +4,7 @@
 // - fonts and icons are cache-first and refreshed in the background (big, and rarely change).
 // - when the app comes back from the background, the page asks for a "check": the code files are fetched
 //   fresh and compared with the cached ones; if any changed, the page reloads onto the new version (start.js).
-const VERSION = "stats-v119";
+const VERSION = "stats-v120";
 const CODE = ["./", "index.html", "style.css", "app.js", "demo.js", "settings.js", "welcome.js", "cloud.js", "start.js", "manifest.webmanifest"];
 const FILES = [...CODE, "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "fonts/ia-writer-mono-latin-400-normal.ttf", "fonts/ia-writer-mono-latin-700-normal.ttf", "fonts/ia-writer-mono-latin-400-italic.ttf"];
 const NETWORK_WAIT = 3000; // ms before giving up on the network and using the cached copy
