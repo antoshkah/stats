@@ -1,15 +1,14 @@
-// settings page: font, colours, hold, pause. loadSettings / applySettings / THEMES / FONTS live in
-// the inline script in index.html's <head>, so the look is applied before the page draws
+// settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
+// stat settings = hold, pause, info, auto reset (and which stats), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
+// the inline script in index.html's <head>. settings live in the cloud with your stats: the defaults until the
+// cloud's copy comes down (cloud.js), every change goes back up, and nothing is kept on the device
 
 // settings
 let settings = loadSettings();
 function saveSettings() {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {}
   applySettings(settings);
   renderSettings();
-  if (typeof cloudQueue === "function") cloudQueue(); // logged in: copy the change up to the cloud (cloud.js loads last)
+  if (typeof cloudQueue === "function") cloudQueue(); // up to the cloud (cloud.js loads last)
 }
 const holdLabel = (ms) => `${(ms / 1000).toFixed(1)}s`;
 // font list: one button per font, made once and only ever reordered (chosen font first)
@@ -71,17 +70,61 @@ function renderSettings() {
   }
   // the pause line shows the number of taps chosen
   $("pauseVal").textContent = { off: 0, tap: 1, double: 2 }[settings.timerPause];
+  $("autoVal").textContent = settings.autoReset; // off / day / week / month
   for (const b of document.querySelectorAll("[data-toggle]")) {
     b.classList.toggle("on", settings[b.dataset.toggle]);
     b.setAttribute("aria-checked", settings[b.dataset.toggle]);
   }
   $("themeVal").innerHTML = `<span class="dot" style="background:${THEMES[settings.theme].bg}"></span>${settings.theme}`;
+  renderStatOpts();
 }
-// pause: 0 / 1 / 2 taps (stays open, so you can see what you picked)
+// stat settings → auto reset, under the day / week / month choice (only while it's on): a line per stat (not the
+// deleted ones), its name, then its reset arrow: this stat resets automatically (dim = it doesn't). kept on the stat
+// (autoReset), with when it was switched on (autoSince), so it starts counting from then (see autoResets in app.js)
+function renderStatOpts() {
+  const box = $("statOpts");
+  box.innerHTML = "";
+  if (settings.autoReset === "off") return;
+  const list = visible();
+  if (!list.length) {
+    box.innerHTML = '<div class="stat-opts-none">no stats yet</div>';
+    return;
+  }
+  for (const stat of list) {
+    const row = document.createElement("div");
+    row.className = "stat-opt";
+    const name = document.createElement("span");
+    name.className = "stat-opt-name";
+    name.textContent = stat.name;
+    const auto = document.createElement("button");
+    auto.className = "stat-opt-auto";
+    auto.classList.toggle("off", !stat.autoReset);
+    auto.setAttribute("aria-label", `${stat.name}: ${stat.autoReset ? "resets" : "doesn't reset"} every ${settings.autoReset}`);
+    auto.innerHTML = '<svg class="ic"><use href="#i-reset" /></svg>';
+    auto.onclick = () => {
+      if (stat.autoReset) {
+        delete stat.autoReset;
+        delete stat.autoSince;
+      } else {
+        stat.autoReset = true;
+        stat.autoSince = new Date().toISOString(); // from now on: no reset straight away for the time before
+      }
+      save();
+      renderStatOpts();
+    };
+    row.append(name, auto);
+    box.append(row);
+  }
+}
+// pause: 0 / 1 / 2 taps, auto reset: off / day / week / month (both stay open, so you can see what you picked)
 for (const b of document.querySelectorAll("[data-mode]")) {
   const [key, value] = b.dataset.mode.split(":");
   b.onclick = () => {
+    if (settings[key] === value) return;
     settings[key] = value;
+    // auto reset switched on or to another period: the stats switched on count from now, so changing it (say week
+    // → day on a wednesday afternoon) doesn't reset them all on the spot
+    if (key === "autoReset") restartAutoResets();
     saveSettings();
   };
 }
@@ -121,31 +164,62 @@ function closeDropdowns() {
 for (const head of document.querySelectorAll(".set-head")) {
   head.onclick = () => head.parentElement.classList.toggle("open");
 }
+// menu → settings: the three pages to pick from (appearance, stat settings, the demo)
 $("settingsBtn").onclick = () => {
   $("menuDialog").close();
-  closeDropdowns();
-  orderFonts(false);
-  renderSettings();
   show($("settingsDialog"));
 };
 // the exit button is the only way out, and it goes back to the menu
 $("settingsDone").onclick = () => {
-  hideTip();
   $("settingsDialog").close();
   show($("menuDialog"));
 };
-$("settingsDialog").addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
+// settings → appearance (font, colours) / stat settings (hold, pause, info…): exit goes back to settings
+const SETTING_PAGES = ["appearanceDialog", "statSettingsDialog"];
+function openSettingPage(id) {
+  $("settingsDialog").close();
+  closeDropdowns();
+  orderFonts(false);
+  renderSettings();
+  show($(id));
+}
+$("appearanceBtn").onclick = () => openSettingPage("appearanceDialog");
+$("statSetBtn").onclick = () => openSettingPage("statSettingsDialog");
+for (const b of document.querySelectorAll(".set-back")) {
+  b.onclick = () => {
+    hideTip();
+    b.closest("dialog").close();
+    show($("settingsDialog"));
+  };
+}
+for (const id of ["settingsDialog", ...SETTING_PAGES]) $(id).addEventListener("cancel", (e) => e.preventDefault()); // no Esc / back gesture
+
+// stat settings → clear local cache (asks first). your stats and settings aren't on the device (they're in the
+// cloud), so what's cleared is the app's own files the device keeps for opening fast (sw.js). a change not sent
+// yet goes up first; then it reloads, fetching the app fresh and your stats from the cloud. you stay logged in
+const WARN = '<span class="ask-head"><svg class="ic"><use href="#i-warn" /></svg><b>warning</b></span>';
+$("clearLocal").onclick = () => {
+  hideTip();
+  ask(`${WARN}clear the local cache? the app reloads fresh. your <b>stats</b> and <b>settings</b> stay in the cloud.`, async () => {
+    if (pending && !isOffline()) await cloudPush();
+    try {
+      for (const k of await caches.keys()) await caches.delete(k);
+    } catch {}
+    location.reload();
+  }, true);
+};
 
 // tap a line's icon (not its words) → a bubble under it saying what that line is for.
-// goes away after 5s, or on the next tap anywhere
+// goes away after 5s, or on the next tap anywhere. each settings page has its own bubble
 let tipTimer = null;
 let tipFor = null;
 function hideTip() {
-  $("setTip").classList.remove("on");
+  for (const t of document.querySelectorAll(".set-tip")) t.classList.remove("on");
   tipFor = null;
 }
 function showTip(icon) {
-  const tip = $("setTip");
+  hideTip();
+  const tip = icon.closest(".settings").querySelector(".set-tip");
   const box = tip.parentElement.getBoundingClientRect();
   const r = icon.getBoundingClientRect();
   // plain text, except {clock} becomes the clock icon (e.g. "a {clock} stat" = a timed stat)
@@ -179,14 +253,16 @@ function showTip(icon) {
   clearTimeout(tipTimer);
   tipTimer = setTimeout(hideTip, 5000);
 }
-for (const icon of document.querySelectorAll("#settingsDialog [data-tip]")) {
+for (const icon of document.querySelectorAll(".settings [data-tip]")) {
   icon.addEventListener("click", (e) => {
     e.stopPropagation(); // the icon explains; it doesn't open the drop-down
     if (tipFor === icon) hideTip();
     else showTip(icon);
   });
 }
-$("settingsDialog").addEventListener("pointerdown", (e) => {
-  if (!e.target.closest("[data-tip]")) hideTip();
-});
-$("settingsDialog").addEventListener("close", hideTip);
+for (const id of SETTING_PAGES) {
+  $(id).addEventListener("pointerdown", (e) => {
+    if (!e.target.closest("[data-tip]")) hideTip();
+  });
+  $(id).addEventListener("close", hideTip);
+}

@@ -32,12 +32,15 @@ function setState(text) {
   document.querySelector(".viewing-label").classList.toggle("is-live", live);
 }
 
-// the list, like the app's: name greyed on the left, the number on the right. deleted stats aren't shown
+// the list, like the app's: name greyed on the left, the number on the right. deleted stats aren't shown,
+// nor ones the owner hid from the live view (the eye on the stat's page in the app). the database doesn't hand those
+// out at all (supabase/hide-from-view.sql); this filter is just a second check. a stat that gets hidden sends no
+// update (it's not readable any more), so it goes at the next full reload (REFRESH)
 function render() {
   const list = $("list");
   list.innerHTML = "";
   timerEls = [];
-  const live = [...shown.values()].filter((s) => !s.deleted).sort((a, b) => String(a.created).localeCompare(String(b.created)));
+  const live = [...shown.values()].filter((s) => !s.deleted && !s.hideView).sort((a, b) => String(a.created).localeCompare(String(b.created)));
   document.documentElement.classList.toggle("empty", live.length === 0);
   for (const stat of live) {
     const row = document.createElement("div");

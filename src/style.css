@@ -61,6 +61,9 @@ button { touch-action: manipulation; } /* no double-tap zoom when tapping fast *
   flex-direction: column;
 }
 .empty #list { display: none; }
+/* logged in, the cloud's copy not down yet: "loading…" / "no connection" where the list will be */
+.list-msg { font-size: 0.9rem; font-weight: normal; color: var(--muted); }
+.list-msg[hidden] { display: none; }
 .row {
   display: flex;
   align-items: center;
@@ -87,11 +90,6 @@ html.fresh, html.fresh body { background: var(--bg); color: var(--fg); }
 .intro-hash.pop { animation: hashpop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
 @keyframes hashpop { from { transform: scale(0); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } to { transform: scale(1); } }
 .intro .intro-q { display: block; padding: 14px 8px 6px; font-size: 2.6rem; line-height: 1; white-space: nowrap; touch-action: manipulation; }
-/* "second time?" page: off-white like the first-visit page, big cloud · import · back */
-#startDialog { background: var(--fg); color: var(--bg); }
-.start-icons { justify-content: center; gap: 28px; }
-.start-icons button { width: 80px; height: 80px; }
-.start-icons .ic { width: 52px; height: 52px; }
 
 /* the plus (id "star", its old shape): add a stat, hold for the menu. bigger while there are no stats */
 .star {
@@ -144,7 +142,7 @@ dialog {
   font-family: inherit;
 }
 dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
-/* full pages (settings, export, yes / no): the whole screen, content centred */
+/* full pages (settings, yes / no): the whole screen, content centred */
 dialog.page {
   width: 100%;
   height: 100%;
@@ -160,14 +158,8 @@ dialog.page > * { width: min(100%, 300px); }
 .settings { width: min(100%, 300px); } /* wide enough for the two columns of info checkboxes */
 .icons button[hidden] { display: none; }
 /* 👍 👎 sit close together, centred */
-#confirmView .icons, #exportConfirm .icons { justify-content: center; gap: 36px; }
-/* export page: one column down the middle, buttons a little bigger than the usual 52px */
-#exportChoices { flex-direction: column; align-items: center; gap: 14px; }
-#exportChoices button { width: 62px; height: 62px; }
-#exportChoices .ic { width: 31px; height: 31px; }
-/* the options with a word under the icon: taller, the word small and grey like the ? guide's legend */
-#exportChoices button:has(.opt-label) { width: auto; min-width: 62px; height: auto; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-#exportChoices .opt-label { font-size: 0.75rem; line-height: 1.3; color: var(--muted); white-space: nowrap; }
+#confirmView .icons { justify-content: center; gap: 36px; }
+#confirmView .ask-exit { margin-top: 18px; }
 
 /* plain text button lists (zero, menu, intro) */
 .choices { display: grid; }
@@ -186,17 +178,16 @@ dialog.page > * { width: min(100%, 300px); }
 /* bigger than the icons on the smaller pages, now that the menu has the whole screen */
 #menuDialog .icons button { width: 76px; height: 76px; }
 #menuDialog .icons .ic { width: 38px; height: 38px; }
-#menuDialog .icons button.pair { width: 104px; }
-#menuDialog .icons button.pair .ic { width: 36px; height: 36px; }
 #menuDialog .glyph { font-size: 2.75rem; }
-/* the cloud only fills the middle of its drawing, so it gets a bigger box to look the same size as the others */
-#menuDialog #accountBtn .ic { width: 48px; height: 48px; }
-#helpDialog .legend .duo { display: flex; height: 44px; align-items: center; }
-#helpDialog .legend .duo .ic { width: 30px; height: 30px; }
-.icons button.pair { width: 72px; padding: 0; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 2px; }
-.icons button.pair .ic { flex: none; display: block; width: 24px; height: 24px; }
+/* the cloud: the plug from the cloud page (wide), in a wider button */
+#menuDialog #accountBtn { width: 120px; }
+#menuDialog #accountBtn .plug { width: 108px; height: 32px; }
+#helpDialog .legend .plug { width: 88px; height: 44px; color: var(--fg); }
+.fresh #helpDialog .legend .plug { color: var(--bg); }
+.d-menu .d-plug { width: 46px; }
+.d-menu .plug { width: 42px; height: 13px; }
 
-/* viewing someone's file: eye + (read-only) above the list, exit below */
+/* live view (live.html): eye + its state above the list */
 .viewing-label {
   display: flex;
   flex-direction: column;
@@ -207,14 +198,13 @@ dialog.page > * { width: min(100%, 300px); }
 }
 .viewing-label .ic { width: 34px; height: 34px; color: var(--fg); }
 .viewing-label span { font-size: 0.8rem; font-style: italic; }
-.viewing-label[hidden], #viewBack[hidden] { display: none; }
+.viewing-label[hidden] { display: none; }
 /* live view, connected: the eye blinks now and then (instead of saying "live") */
 .viewing-label.is-live .ic { animation: eyeblink 4s ease-in-out infinite; transform-origin: center; }
 @keyframes eyeblink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
 @media (prefers-reduced-motion: reduce) { .viewing-label.is-live .ic { animation: none; } }
-#viewBack { width: 56px; height: 56px; display: grid; place-items: center; color: var(--muted); }
 body.viewing .row .count { cursor: default; }
-/* the whole app is bold, so the export question goes regular to let its key words stand out */
+/* the whole app is bold, so the question goes regular to let its key words stand out */
 .confirm-text { font-weight: normal; }
 .confirm-text b { font-weight: bold; color: var(--fg); }
 #confirmText.rich, .sync-warn { font-weight: normal; }
@@ -349,10 +339,8 @@ body.viewing .row .count { cursor: default; }
 #helpDialog .legend .legend-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; font-size: inherit; color: inherit; }
 /* "To sync online click here." only in the first-visit version of the guide */
 #helpDialog:not(.first) .first-only { display: none; }
-#helpDialog.first #helpDone { display: none; } /* first visit: "continue offline" is the way on instead */
-/* …and with the thumbs up hidden, "powered by Claude Code" is the last thing showing: it takes the bottom auto margin,
-   so the guide stays centred top-to-bottom (otherwise it all sinks to the bottom) */
-#helpDialog.first .welcome-pb { margin-top: 28px; margin-bottom: auto; }
+/* first visit: "powered by Claude Code" under the text, then the exit (back to the # screen) */
+#helpDialog.first .welcome-pb { margin-top: 28px; }
 #helpDialog .first-only { margin-top: 4px; }
 #helpDialog .first-only .help-link { color: inherit; font-weight: bold; }
 /* "here" on the cloud info page */
@@ -376,7 +364,7 @@ body.viewing .row .count { cursor: default; }
 #helpDialog ul { padding: 0; margin: 0 0 6px; }
 #helpDialog b { font-weight: bold; }
 #helpDialog .done { display: grid; place-items: center; width: 100%; padding: 14px; margin-top: 14px; color: var(--muted); }
-/* the exit button, the same size as on the settings / export pages */
+/* the exit button, the same size as on the settings pages */
 #helpDialog .done .ic { width: 26px; height: 26px; vertical-align: 0; }
 #helpDialog a { color: inherit; }
 
@@ -431,7 +419,6 @@ body.viewing .row .count { cursor: default; }
 .d-menu span { width: 30px; height: 30px; display: grid; place-items: center; }
 .d-menu .ic { width: 16px; height: 16px; }
 .d-menu .glyph { font-size: 1.05rem; }
-.d-menu .d-pair { width: 40px; display: flex; justify-content: center; gap: 1px; }
 /* the stat page fills the whole demo screen, like the real one */
 .d-pop {
   left: 0;
@@ -542,6 +529,9 @@ body.viewing .row .count { cursor: default; }
 /* "taps" after the 2: just a word, not a choice */
 .modes { align-items: center; }
 .modes-unit { color: var(--muted); font-size: 0.85rem; margin-left: -10px; }
+/* words instead of numbers (auto reset: off day week month): closer together, so all four fit */
+.modes.modes-words { gap: 4px; }
+.modes-words button { font-size: 0.85rem; }
 .row.tappable { cursor: pointer; touch-action: manipulation; } /* no double-tap zoom */
 .set-head .chev, .font-chev { width: 16px; height: 16px; color: var(--muted); transition: rotate 0.22s ease; }
 .setting.open .chev { rotate: 180deg; }
@@ -575,8 +565,14 @@ body.viewing .row .count { cursor: default; }
   font-size: 1.1rem;
 }
 .swatches button.on { outline: 2px solid var(--fg); outline-offset: 2px; }
-/* bottom of settings: ? (the guide) next to the exit */
-#settingsDialog .settings-end { justify-content: center; gap: 24px; margin-top: 4px; }
+/* bottom of a settings page: the exit, in the middle */
+.settings .settings-end { justify-content: center; gap: 24px; margin-top: 4px; }
+/* settings: appearance · stat settings · demo, one column down the middle, a small grey word under each (like the
+   ? guide's legend); the exit doesn't have one */
+.settings-hub { flex-direction: column; align-items: center; gap: 14px; }
+.settings-hub button:has(.opt-label) { width: auto; min-width: 62px; height: auto; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.settings-hub .glyph { font-size: 2.2rem; }
+.opt-label { font-size: 0.75rem; font-weight: normal; line-height: 1.3; color: var(--muted); white-space: nowrap; }
 
 /* settings: tap a line's icon for a small bubble saying what that line is for */
 .set-ic[data-tip] { cursor: help; }
@@ -604,7 +600,7 @@ body.viewing .row .count { cursor: default; }
 }
 .set-tip.on { opacity: 1; translate: 0 0; visibility: visible; }
 /* nothing in settings may widen the page past the screen */
-#settingsDialog { overflow-x: hidden; }
+#appearanceDialog, #statSettingsDialog { overflow-x: hidden; }
 /* the little point, aimed at the icon */
 .set-tip::before {
   content: "";
@@ -665,6 +661,17 @@ body.viewing .row .count { cursor: default; }
 .meta-ic { width: 1.25em; height: 1.25em; vertical-align: -0.3em; stroke-width: 2.6; }
 .check-row { font-size: 0.78rem; gap: 7px; text-align: left; white-space: nowrap; } /* labels stay on one line */
 .checks .check-ic { margin-left: 2px; }
+/* stat settings → auto reset: under the choices, a line per stat, its name (greyed, cut short if long) then its
+   reset arrow. a long list scrolls inside the drop-down */
+.stat-opts { display: flex; flex-direction: column; max-height: 40vh; overflow-y: auto; padding: 0 2px 8px; }
+.stat-opt { display: flex; align-items: center; gap: 10px; min-height: 38px; }
+.stat-opt-name { flex: 1; min-width: 0; text-align: left; font-size: 0.85rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-opt button { width: 34px; height: 34px; flex: none; display: grid; place-items: center; }
+.stat-opt button .ic { width: 22px; height: 22px; }
+/* bright = this stat resets itself, dim = it doesn't */
+.stat-opt-auto { transition: opacity 0.15s; }
+.stat-opt-auto.off { opacity: 0.3; }
+.stat-opts-none { padding: 6px 0 2px; font-size: 0.8rem; font-weight: normal; color: var(--muted); }
 /* the narrowest phones (~320px wide) don't have room for two columns: one column of six instead */
 @media (max-width: 345px) {
   .checks { grid-template-rows: none; grid-auto-flow: row; }
@@ -724,6 +731,11 @@ body.viewing .row .count { cursor: default; }
 }
 .share-name::placeholder { color: var(--muted); }
 .share-icons { justify-content: center; gap: 8px; }
+/* the live view page (menu → eye): the view ID and its buttons, or (not connected) "connect first" + the plug; exit under */
+.share[hidden], .view-offline[hidden] { display: none; }
+.view-offline { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.view-offline .icons { justify-content: center; }
+.view-icons { justify-content: center; margin-top: 18px; }
 /* log out + back, side by side in the middle */
 .account-icons { justify-content: center; gap: 24px; }
 /* logged in: the phone + cloud plug at the top of the page (same drawing as the login's), plugged while online */
@@ -731,9 +743,7 @@ body.viewing .row .count { cursor: default; }
 #accountDialog .account-cloud[hidden] { display: none; }
 .account-cloud.plugged .plug-a { transform: translateX(14.5px); }
 .account-cloud.plugged .plug-b { transform: translateX(-14.5px); }
-/* offline (apart): the side that wins when back online stays bright, the other dims */
 .account-cloud .plug-a, .account-cloud .plug-b { transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.25s; }
-.account-cloud.wins-phone .plug-b, .account-cloud.wins-cloud .plug-a { opacity: 0.35; }
 /* tapped while online (nothing to choose): a quick shake */
 #accountDialog .account-cloud.nope { animation: nope 0.3s; }
 @keyframes nope { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
@@ -775,7 +785,7 @@ body.viewing .row .count { cursor: default; }
 .star-hint { display: none; margin-top: -6px; font-size: 0.75rem; font-weight: normal; color: var(--muted); }
 .empty .star-hint { display: block; }
 .star[hidden] + .star-hint { display: none; }
-/* login page: "new? register" / "have an account? log in", small and grey under the plug */
+/* login page: "new?" / "have an account?", small and grey under the plug */
 .login-mode { padding: 4px 8px; font-size: 0.8rem; font-weight: normal; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .login input[hidden] { display: none; }
 .login-msg.bad { color: var(--danger); }
