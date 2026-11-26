@@ -9,7 +9,8 @@
 // also: sharing a live view (live.html, a read-only page anyone with the link can watch).
 //
 // tables (see the SQL in the setup): stats (user_id, id, data, updated_at), settings (user_id, data, updated_at),
-// shares (id, user_id, username). row-level security: you only change your own rows; a shared user's stats can be read by anyone.
+// shares (id, user_id, username). row-level security: you only change your own rows; you read all of yours; a shared
+// user's stats can be read by anyone, except the ones hidden from the live view (supabase/hide-from-view.sql)
 
 // the publishable key is meant to be public; what protects the data is row-level security
 const SB_URL = "https://ocgnkpvoligvygakairp.supabase.co";

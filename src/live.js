@@ -33,7 +33,9 @@ function setState(text) {
 }
 
 // the list, like the app's: name greyed on the left, the number on the right. deleted stats aren't shown,
-// nor ones the owner hid from the live view (the eye on the stat's page in the app)
+// nor ones the owner hid from the live view (the eye on the stat's page in the app). the database doesn't hand those
+// out at all (supabase/hide-from-view.sql); this filter is just a second check. a stat that gets hidden sends no
+// update (it's not readable any more), so it goes at the next full reload (REFRESH)
 function render() {
   const list = $("list");
   list.innerHTML = "";
