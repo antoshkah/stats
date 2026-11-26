@@ -226,10 +226,11 @@
       </div>
     </dialog>
 
-    <!-- hold the +: the menu, a full page: cloud, settings (the ? guide is in there). tap any empty space to go back to the list -->
+    <!-- hold the +: the menu, a full page: cloud, live view, settings (the ? guide is in there). tap any empty space to go back to the list -->
     <dialog id="menuDialog" class="page">
       <div class="icons">
         <button id="accountBtn" aria-label="Cloud"><svg class="plug" aria-hidden="true"><use href="#i-plug" /></svg></button>
+        <button id="viewBtn" aria-label="Live view"><svg class="ic"><use href="#i-eye" /></svg></button>
         <button id="settingsBtn" aria-label="Settings"><span class="glyph">A</span></button>
       </div>
     </dialog>
@@ -311,23 +312,34 @@
       <div class="account-in" id="accountIn" hidden>
         <div class="account-email" id="accountEmail"></div>
         <div class="login-msg" id="accountState"></div>
-        <!-- live view: a read-only page (live.html?u=username) anyone with the link can watch.
-             not shared: type a username, tap the eye. shared: open it · copy the link · stop sharing (eye, red cross) -->
-        <div class="share">
-          <input class="share-name" id="shareName" maxlength="20" placeholder="view ID" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-label="View id for your live view" />
-          <div class="icons share-icons">
-            <button id="shareBtn" aria-label="Share live view"><svg class="ic"><use href="#i-eye" /></svg></button>
-            <button id="openShare" aria-label="Open live view" hidden><svg class="ic"><use href="#i-eye" /></svg></button>
-            <button id="copyShare" aria-label="Copy link" hidden><svg class="ic"><use id="copyIcon" href="#i-copy" /></svg></button>
-            <button id="stopShare" aria-label="Deactivate live view" hidden><svg class="ic"><use href="#i-eye-x" /></svg></button>
-          </div>
-          <div class="login-msg" id="shareMsg"></div>
-        </div>
       </div>
       <!-- log out (logged in only: a cloud with a red line through it) next to back -->
       <div class="icons account-icons">
         <button id="logoutBtn" aria-label="Log out" hidden><svg class="ic"><use href="#i-cloud-off" /></svg></button>
         <button id="accountBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
+      </div>
+    </dialog>
+
+    <!-- menu → eye: the live view, a read-only page (live.html?u=view-id) anyone with the link can watch. cloud.js
+         not shared: type a view ID, tap the eye. shared: open it · copy the link · stop sharing (eye, red cross).
+         not connected: there's nothing to share yet, so it says so, and the plug goes to the cloud page -->
+    <dialog id="viewDialog" class="page">
+      <div class="share" id="shareBox">
+        <input class="share-name" id="shareName" maxlength="20" placeholder="view ID" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-label="View id for your live view" />
+        <div class="icons share-icons">
+          <button id="shareBtn" aria-label="Create live view"><svg class="ic"><use href="#i-eye" /></svg></button>
+          <button id="openShare" aria-label="Open live view" hidden><svg class="ic"><use href="#i-eye" /></svg></button>
+          <button id="copyShare" aria-label="Copy link" hidden><svg class="ic"><use id="copyIcon" href="#i-copy" /></svg></button>
+          <button id="stopShare" aria-label="Deactivate live view" hidden><svg class="ic"><use href="#i-eye-x" /></svg></button>
+        </div>
+        <div class="login-msg" id="shareMsg"></div>
+      </div>
+      <div class="view-offline" id="viewNeedCloud" hidden>
+        <div class="login-msg">connect to the cloud to share a live view.</div>
+        <div class="icons"><button class="plug-btn" id="viewToCloud" aria-label="Connect"><svg class="plug" aria-hidden="true"><use href="#i-plug" /></svg></button></div>
+      </div>
+      <div class="icons view-icons">
+        <button id="viewExit" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
       </div>
     </dialog>
 
@@ -452,6 +464,7 @@
         <!-- the menu (hold the +) -->
         <div class="d-menu" id="dMenu">
           <span class="d-plug"><svg class="plug"><use href="#i-plug" /></svg></span>
+          <span><svg class="ic"><use href="#i-eye" /></svg></span>
           <span class="glyph">A</span>
         </div>
         <!-- a soft dip between scenes, so a jump to another page doesn't look like something the app does on its own -->
@@ -473,6 +486,7 @@
       <ul class="legend">
         <!-- tap: the cloud sync info, full screen (cloudInfoDialog) -->
         <li><button class="legend-btn" id="cloudInfoBtn"><svg class="plug"><use href="#i-plug" /></svg>cloud sync</button></li>
+        <li><svg class="ic"><use href="#i-eye" /></svg>live view</li>
         <li><b>A</b>settings</li>
       </ul>
       <!-- first visit only, at the bottom: "powered by Claude Code" types itself out, with the little guy as the cursor

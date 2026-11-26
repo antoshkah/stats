@@ -241,7 +241,7 @@ async function cloudStart(quiet = false) {
   }
   // in the middle of something (a stat page, a yes / no, adding time…): don't swap the stats out from
   // under it. it downloads the next time instead
-  if (document.querySelector("dialog[open]:not(#accountDialog):not(#menuDialog):not(#helpDialog)")) return;
+  if (document.querySelector("dialog[open]:not(#accountDialog):not(#viewDialog):not(#menuDialog):not(#helpDialog)")) return;
   syncRunning = true;
   if (!quiet) setSyncing();
   let cloud;
@@ -278,7 +278,7 @@ async function cloudStart(quiet = false) {
   synced();
 }
 
-// ── live view: live.html?u=<username>, read-only, for anyone who has the link ──
+// ── live view (menu → eye, its own page): live.html?u=<username>, read-only, for anyone who has the link ──
 // not shared: type a username, tap the eye. shared: the username (fixed), then open · copy link · stop sharing
 let shareName = null; // null = not shared (or not known yet)
 const USERNAME = /^[a-z0-9_-]{3,20}$/;
@@ -289,8 +289,36 @@ async function loadShare() {
     const rows = await rest("shares?select=username");
     shareName = rows[0] ? rows[0].username : null;
   } catch {}
-  renderAccount();
+  renderView();
 }
+// the live view page: the view ID and its buttons while connected; otherwise just "connect first" and the plug
+function renderView() {
+  const inside = !!session;
+  $("shareBox").hidden = !inside;
+  $("viewNeedCloud").hidden = inside;
+  if (!inside) return;
+  const shared = !!shareName;
+  $("shareName").readOnly = shared;
+  if (shared) $("shareName").value = shareName;
+  $("shareBtn").hidden = shared;
+  for (const id of ["openShare", "copyShare", "stopShare"]) $(id).hidden = !shared;
+}
+$("viewBtn").onclick = () => {
+  $("menuDialog").close();
+  shareMsg("");
+  renderView();
+  show($("viewDialog"));
+  if (session) loadShare();
+};
+$("viewExit").onclick = () => {
+  $("viewDialog").close();
+  show($("menuDialog"));
+};
+// not connected: the plug goes to the cloud page (back from there goes to the menu, like opening it from there)
+$("viewToCloud").onclick = () => {
+  $("viewDialog").close();
+  $("accountBtn").click();
+};
 // usernames are lowercase: letters, numbers, _ and -
 $("shareName").addEventListener("input", () => {
   const el = $("shareName");
@@ -322,7 +350,7 @@ $("shareBtn").onclick = async () => {
     return shareMsg(e.code === "23505" ? "that view ID is taken" : `couldn't share: ${e.message}`);
   }
   $("shareName").blur();
-  renderAccount();
+  renderView();
 };
 $("openShare").onclick = () => window.open(shareUrl(), "_blank", "noopener");
 // copy: the link to the clipboard, and the icon turns into a tick for a moment
@@ -345,7 +373,7 @@ $("stopShare").onclick = () =>
     } catch (e) {
       shareMsg(e instanceof TypeError ? "no connection" : `couldn't stop: ${e.message}`);
     }
-    renderAccount();
+    renderView();
   });
 
 // ── the account page (menu → cloud) ──
@@ -363,11 +391,6 @@ function renderAccount() {
     plugTop.classList.toggle("wins-phone", isOffline() && prefer === "phone");
     plugTop.classList.toggle("wins-cloud", isOffline() && prefer !== "phone");
     $("accountState").textContent = cloudStatus();
-    const shared = !!shareName;
-    $("shareName").readOnly = shared;
-    if (shared) $("shareName").value = shareName;
-    $("shareBtn").hidden = shared;
-    for (const id of ["openShare", "copyShare", "stopShare"]) $(id).hidden = !shared;
   }
 }
 // while the page is open, keep the status current ("online" turns into "online · last sync …" as time passes)
@@ -384,7 +407,6 @@ $("accountBtn").onclick = () => {
   $("menuDialog").close();
   renderAccount();
   show($("accountDialog"));
-  if (session) loadShare();
 };
 // ── registering: a new account, confirmed by email ──
 // "new?" switches the form: a "repeat password" box appears and the plug makes an account instead of
