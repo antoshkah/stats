@@ -1,9 +1,10 @@
 name: Deploy to GitHub Pages
 
 # publishes the app in src/ (the README's assets/ aren't part of the site)
+# only the release branch goes live; develop never deploys
 on:
   push:
-    branches: [ main ]
+    branches: [ release ]
     paths:
       - 'src/**'
       - '.github/workflows/deploy.yaml'
@@ -23,6 +24,7 @@ concurrency:
 # before GitHub lists it ("No artifacts named github-pages were found")
 jobs:
   build:
+    if: github.ref == 'refs/heads/release' # manual runs from any other branch do nothing (deploy is skipped with it)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
