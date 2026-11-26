@@ -387,7 +387,7 @@ $("accountBtn").onclick = () => {
   if (session) loadShare();
 };
 // ── registering: a new account, confirmed by email ──
-// "new? register" switches the form: a "repeat password" box appears and the plug makes an account instead of
+// "new?" switches the form: a "repeat password" box appears and the plug makes an account instead of
 // logging in. Supabase emails a confirmation link; opening it comes back here (see confirmReturn below), and then you
 // log in as usual. (needs sign-ups switched on in Supabase, and this page's address in its allowed redirect URLs)
 let registerMode = false;
@@ -401,7 +401,7 @@ function setRegisterMode(on) {
   $("loginRepeat").value = "";
   $("loginPassword").setAttribute("autocomplete", on ? "new-password" : "current-password");
   $("plugBtn").setAttribute("aria-label", on ? "Register" : "Connect");
-  $("loginMode").textContent = on ? "have an account? log in" : "new? register";
+  $("loginMode").textContent = on ? "have an account?" : "new?";
   loginMsg("");
 }
 $("loginMode").onclick = () => setRegisterMode(!registerMode);

@@ -775,7 +775,7 @@ body.viewing .row .count { cursor: default; }
 .star-hint { display: none; margin-top: -6px; font-size: 0.75rem; font-weight: normal; color: var(--muted); }
 .empty .star-hint { display: block; }
 .star[hidden] + .star-hint { display: none; }
-/* login page: "new? register" / "have an account? log in", small and grey under the plug */
+/* login page: "new?" / "have an account?", small and grey under the plug */
 .login-mode { padding: 4px 8px; font-size: 0.8rem; font-weight: normal; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .login input[hidden] { display: none; }
 .login-msg.bad { color: var(--danger); }
