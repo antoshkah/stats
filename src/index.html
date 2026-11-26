@@ -92,7 +92,6 @@
     </script>
   </head>
   <body>
-    <div class="viewing-label" id="viewLabel" hidden><svg class="ic"><use href="#i-eye" /></svg><span id="viewNote">(read-only)</span></div>
     <div id="list"></div>
     <button class="star" id="star" aria-label="Add a stat (hold for the menu)">
       <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>
@@ -101,12 +100,11 @@
     <div class="star-hint" aria-hidden="true">(hold for menu)</div>
     <!-- first visit: a black screen, just the # in the middle.
          tap the #: "stats" types out after it (tap again: the guide).
-         hold the #: "welcomeback" types out instead (tap: the cloud / import page). hold again to switch back.
+         hold the #: "welcomeback" types out instead (tap: the cloud login). hold again to switch back.
          the line is centred, so the # slides left as the text grows (app.js) -->
     <div class="intro" id="intro" hidden>
       <button class="intro-q" id="introHelp" aria-label="stats"><span class="intro-hash" id="introHash">#</span><span id="introRest"></span></button>
     </div>
-    <button id="viewBack" aria-label="Stop viewing" hidden><svg class="ic"><use href="#i-exit" /></svg></button>
     <!-- tap the plus: type a name, then pick # (counted) or clock (timed, starts straight away) -->
     <div class="composer" id="composer" hidden>
       <input class="newbox" id="newbox" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Stat name" />
@@ -118,8 +116,6 @@
 
     <!-- icons, used via <use href="#..."> -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M4 17v3h16v-3" /></symbol>
-      <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M4 17v3h16v-3" /></symbol>
       <symbol id="i-reset" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" /></symbol>
       <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></symbol>
       <!-- "not resets / not deletes" (the last action info bubble): the icon with a red cross over it -->
@@ -211,7 +207,7 @@
       </div>
     </dialog>
 
-    <!-- yes / no page: reset, delete, replacing stats on import (see ask()) -->
+    <!-- yes / no page: reset, delete, disconnect, clear local cache (see ask()) -->
     <dialog id="zeroDialog" class="page">
       <div class="choices" id="confirmView">
         <div id="confirmText"></div>
@@ -227,12 +223,10 @@
       </div>
     </dialog>
 
-    <!-- hold the star: cloud, import / export (one page), settings (the ? guide is in there) -->
-    <!-- hold the +: the menu, a full page. tap any empty space to go back to the list -->
+    <!-- hold the +: the menu, a full page: cloud, settings (the ? guide is in there). tap any empty space to go back to the list -->
     <dialog id="menuDialog" class="page">
       <div class="icons">
         <button id="accountBtn" aria-label="Account"><svg class="ic"><use href="#i-cloud" /></svg></button>
-        <button id="exportBtn" class="pair" aria-label="Import / export"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></button>
         <button id="settingsBtn" aria-label="Settings"><span class="glyph">A</span></button>
       </div>
     </dialog>
@@ -334,28 +328,6 @@
       </div>
     </dialog>
 
-
-    <!-- first visit → "second time?": bring your stats in, from the cloud (log in) or a backup file (import).
-         off-white like the first-visit page -->
-
-    <dialog id="startDialog" class="page">
-      <div class="icons start-icons">
-        <button id="startCloud" aria-label="Connect to the cloud"><svg class="ic"><use href="#i-cloud" /></svg></button>
-        <button id="startImport" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg></button>
-        <button id="startBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
-      </div>
-    </dialog>
-
-    <!-- menu → import / export -->
-    <dialog id="exportDialog" class="page">
-      <div class="icons" id="exportChoices">
-        <!-- each option has a small grey word under it (like the ? guide's legend); the exit doesn't -->
-        <button id="importBtn" aria-label="Import"><svg class="ic"><use href="#i-import" /></svg><span class="opt-label" aria-hidden="true">import</span></button>
-        <button id="exportOnly" aria-label="Export"><svg class="ic"><use href="#i-export" /></svg><span class="opt-label" aria-hidden="true">export</span></button>
-        <button id="exportCancel" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
-      </div>
-    </dialog>
-    <input type="file" id="importFile" accept="application/json,.json" hidden />
 
     <!-- menu → settings: three pages to pick from (appearance, stat settings, the demo / ? guide), each with a small
          grey word under it. only the exit button leaves (back to the menu) -->
@@ -477,7 +449,6 @@
         <!-- the menu (hold the +) -->
         <div class="d-menu" id="dMenu">
           <span><svg class="ic"><use href="#i-cloud" /></svg></span>
-          <span class="d-pair"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></span>
           <span class="glyph">A</span>
         </div>
         <!-- a soft dip between scenes, so a jump to another page doesn't look like something the app does on its own -->
@@ -499,8 +470,6 @@
       <ul class="legend">
         <!-- tap: the cloud sync info, full screen (cloudInfoDialog) -->
         <li><button class="legend-btn" id="cloudInfoBtn"><svg class="ic"><use href="#i-cloud" /></svg>cloud sync</button></li>
-        <!-- tap: the import / export info, full screen (dataInfoDialog) -->
-        <li><button class="legend-btn" id="dataInfoBtn"><span class="duo"><svg class="ic"><use href="#i-import" /></svg><svg class="ic"><use href="#i-export" /></svg></span>import / export JSON</button></li>
         <li><b>A</b>settings</li>
       </ul>
       <!-- first visit only, at the bottom: "powered by Claude Code" types itself out, with the little guy as the cursor
@@ -510,19 +479,6 @@
       </div>
 
       <button class="done" id="helpDone" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
-    </dialog>
-
-    <!-- ? guide → import / export in the icon row: full screen, no border. back (or tapping anywhere) returns to the guide.
-         (importing replaces this device's stats + settings; connected, that change uploads and replaces the cloud's too) -->
-    <dialog id="dataInfoDialog" class="page">
-      <div class="cloud-info">
-        <h2 class="info-title">for offline use</h2>
-        <p>import/export JSON with all stats and settings.</p>
-        <p>importing overrides all data (cloud, if sync is on + local).</p>
-      </div>
-      <div class="icons">
-        <button id="dataInfoBack" class="muted" aria-label="Back"><svg class="ic"><use href="#i-exit" /></svg></button>
-      </div>
     </dialog>
 
     <!-- ? guide → the cloud in the icon row: cloud sync + live view, full screen, no border. "here" deletes everything of yours in the cloud (cloud.js).

@@ -1,5 +1,5 @@
-// stats: the core app. stats + timers, the list, adding a stat, the stat page, yes / no page,
-// export / import. loads first; demo.js, settings.js, welcome.js and start.js build on it.
+// stats: the core app. stats + timers, the list, adding a stat, the stat page, yes / no page.
+// loads first; demo.js, settings.js, welcome.js and start.js build on it.
 
 const KEY = "stats.v1";
 const OLD_KEY = "tally.v1"; // data saved before the rename
@@ -10,7 +10,7 @@ const $ = (id) => document.getElementById(id);
 // timed stat:   { id, name, kind: "timer", created, elapsed, since, highest, deleted?, log }
 //   elapsed = ms banked from earlier runs, since = when the current run started (null = paused),
 //   highest = longest it has run, in ms
-// the log only holds resets and deletes; deleted stats are kept (hidden) so their history survives in backups
+// the log only holds resets and deletes; deleted stats are kept (hidden) so their history survives (and syncs)
 let stats = load();
 
 function load() {
@@ -23,7 +23,7 @@ function load() {
   }
 }
 
-// accepts any saved/imported shape, including older versions that logged every tap
+// accepts any saved / synced shape, including older versions that logged every tap
 function normalize(s) {
   const timer = s.kind === "timer";
   const all = (Array.isArray(s.log) ? s.log : [])
@@ -135,7 +135,7 @@ function save() {
   if (typeof cloudQueue === "function") cloudQueue(); // logged in: copy the change up to the cloud (cloud.js loads last)
 }
 
-// first-timers see an i instead of the star until they've read the guide or imported
+// first-timers see an i instead of the star until they've read the guide or synced
 function isNew() {
   try {
     return !localStorage.getItem(SEEN_KEY) && visible().length === 0;
@@ -234,9 +234,6 @@ function show(dialog) {
   if (dialog.id === "helpDialog") runDemo();
 }
 
-// stats from a file being looked at (read-only); null = showing your own
-let viewing = null;
-
 // running timers tick on screen (the list and the open popup)
 let timerEls = [];
 setInterval(() => {
@@ -249,19 +246,9 @@ function render() {
   const list = $("list");
   list.innerHTML = "";
   // your live stats, then (if "deleted" is on in settings → info) the deleted ones at the bottom
-  const shown = viewing
-    ? viewing.filter((s) => !s.deleted)
-    : [...visible(), ...(settings.showDeleted ? stats.filter((s) => s.deleted) : [])];
+  const shown = [...visible(), ...(settings.showDeleted ? stats.filter((s) => s.deleted) : [])];
   document.documentElement.classList.toggle("empty", shown.length === 0);
-  document.body.classList.toggle("viewing", !!viewing);
-  $("viewLabel").hidden = !viewing;
-  $("viewBack").hidden = !viewing;
-  if (viewing) {
-    $("star").hidden = true;
-    $("intro").hidden = true;
-  }
-  // the off-white first-visit page pauses while viewing someone's file
-  document.documentElement.classList.toggle("fresh", !viewing && isNew());
+  document.documentElement.classList.toggle("fresh", isNew());
   updateBar();
 
   timerEls = [];
@@ -272,8 +259,8 @@ function render() {
     name.className = "name";
     name.textContent = stat.name;
     const timer = stat.kind === "timer";
-    const deleted = !viewing && !!stat.deleted;
-    const count = document.createElement(viewing || timer || deleted ? "span" : "button");
+    const deleted = !!stat.deleted;
+    const count = document.createElement(timer || deleted ? "span" : "button");
     count.className = "count";
     count.textContent = valueOf(stat);
     if (timer) {
@@ -283,7 +270,6 @@ function render() {
     }
     row.append(name, count);
     list.append(row);
-    if (viewing) continue; // look, don't touch
     if (deleted) {
       // greyed, a trash can by the name; tap to open it (restore or delete for good)
       row.classList.add("deleted", "tappable");
@@ -310,18 +296,9 @@ function render() {
   }
 }
 
-$("viewBack").onclick = () => {
-  viewing = null;
-  const first = isNew();
-  $("star").hidden = first;
-  $("intro").hidden = !first;
-  if (first) playIntro();
-  render();
-};
-
 // first visit: a black screen with just the # in the middle.
 //   tap the #   → "stats" types out after it ("#stats"); tap that → the first-timer guide
-//   hold the #  → "welcomeback" types out instead; tap that → the cloud / import page (startDialog)
+//   hold the #  → "welcomeback" types out instead; tap that → the cloud login (cloud.js)
 //   hold again  → switches between the two
 // the line is centred, so the # slides left as the text grows
 let introTyping = 0; // bumps on every (re)type, so an older one still running stops
@@ -359,7 +336,7 @@ function setIntro(mode) {
 onLongPress($("introHelp"), () => setIntro(introMode === "back" ? "first" : "back"), 600);
 $("introHelp").onclick = () => {
   if (!introMode) return setIntro("first");
-  if (introMode === "back") return show($("startDialog"));
+  if (introMode === "back") return openAccountFromStart(); // cloud.js
   helpFromMenu = false;
   $("helpDialog").classList.add("first"); // the first-timer version
   show($("helpDialog"));
@@ -368,11 +345,6 @@ $("introHelp").onclick = () => {
 // first-timer guide → "add": the add-to-home-screen links. exit goes back to the guide
 $("helpAdd").onclick = () => show($("addHomeDialog"));
 $("addHomeBack").onclick = () => $("addHomeDialog").close();
-$("startImport").onclick = () => {
-  $("startDialog").close();
-  $("importFile").click();
-};
-$("startBack").onclick = () => $("startDialog").close();
 
 // star opens the name field (just a cursor); holding it opens the menu
 $("star").addEventListener("click", () => {
@@ -519,7 +491,7 @@ function openEdit(stat) {
 }
 
 // rename: tap the name and it becomes a text field. Enter / tapping away saves, Esc cancels,
-// an empty name keeps the old one. the id never changes, so its history and backups still line up
+// an empty name keeps the old one. the id never changes, so its history and the cloud's copy still line up
 $("editName").onclick = () => {
   if (!editing || editing.deleted) return; // restore it first to rename it
   const input = $("editNameInput");
@@ -587,7 +559,7 @@ $("editCount").onclick = () => {
 };
 $("minusBtn").onclick = () => change(-1);
 
-// the yes / no page (reset, delete, replacing stats on import). no onYes = just a message with a back button
+// the yes / no page (reset, delete, disconnect, clearing the local cache). no onYes = just a message with a back button
 let onYes = null;
 let onNo = null; // optional: 👎 does something of its own (tapping away still just cancels)
 // html = true: the text is our own markup (e.g. a <b> word), regular weight so the bold part stands out
@@ -765,12 +737,6 @@ const leaveHelp = () => {
   if (helpFromMenu) show($("settingsDialog"));
 };
 $("helpDone").onclick = leaveHelp;
-// guide → import / export in the icon row: what it's for (full screen). back or tapping anywhere returns to the guide
-$("dataInfoBtn").onclick = () => show($("dataInfoDialog"));
-$("dataInfoBack").onclick = () => $("dataInfoDialog").close();
-$("dataInfoDialog").addEventListener("click", (e) => {
-  if (e.target.closest("button") !== $("dataInfoBack")) $("dataInfoDialog").close();
-});
 // first visit: "continue offline" → closes the guide onto the empty + page
 $("helpOffline").onclick = leaveHelp;
 $("helpDialog").addEventListener("click", (e) => {
@@ -778,21 +744,6 @@ $("helpDialog").addEventListener("click", (e) => {
   leaveHelp();
 });
 $("helpDialog").addEventListener("close", markSeen);
-
-// import / export page: import, export, or full app reset (asks yes / no first)
-$("exportBtn").onclick = () => {
-  $("menuDialog").close();
-  show($("exportDialog"));
-};
-// cancel steps back to the menu instead of closing everything
-$("exportCancel").onclick = () => {
-  $("exportDialog").close();
-  show($("menuDialog"));
-};
-$("exportOnly").onclick = () => {
-  $("exportDialog").close();
-  exportBackup();
-};
 
 // wipes everything this app keeps in localStorage (stats, settings, cloud login, first-visit flags), then
 // reloads. only this app's keys: the rest of the site shares localStorage.
@@ -811,116 +762,3 @@ function wipeLocal(keepSeen = false, keepSession = false) {
   } catch {}
   location.reload();
 }
-// backup files use 3-letter keys; the app works with the full names. where the first three letters clash,
-// it's the first letter + the start of the next word (showCreated → scr, timerPause → tpa)
-const SHORT_KEYS = {
-  _readme: "_re", exported: "exp", stats: "sta", settings: "set",
-  id: "id", name: "nam", kind: "kin", created: "cre", count: "cou", elapsed: "ela", since: "sin",
-  highest: "hig", deleted: "del", last: "las", log: "log", action: "act", time: "tim", added: "add",
-  theme: "the", font: "fon", hold: "hol", timerPause: "tpa",
-  showCreated: "scr", showResets: "sre", showDeleted: "sde", showAge: "sag", showLogs: "slo", showLast: "sla",
-};
-const LONG_KEYS = Object.fromEntries(Object.entries(SHORT_KEYS).map(([k, v]) => [v, k]));
-// renames every object key found in the map, all the way down; anything else is left as it is
-function renameKeys(value, map) {
-  if (Array.isArray(value)) return value.map((v) => renameKeys(v, map));
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value).map(([k, v]) => [map[k] ?? k, renameKeys(v, map)]));
-}
-
-// returns true once the file has been shared or downloaded
-async function exportBackup() {
-  // written with the file's own 3-letter keys (see SHORT_KEYS); stats and settings are renamed into them.
-  // JSON has no comments, so the explanation lives in a "_re" (readme) field (ignored on import)
-  const backup = {
-    _re: {
-      exp: "JSON file creation time",
-      sta: "all stats (&deleted)",
-      set: "your settings (rw)",
-      id: "unique random-generated ID",
-      nam: "mutable",
-      kin: "counter|timer",
-      cre: "stat creation time",
-      cou: "(counter)",
-      ela: "(timer)",
-      sin: "(timer)",
-      hig: "",
-      del: "delete marker",
-      las: "add|subtract|pause|resume|addtime",
-      log: "act = reset|delete|restore|addtime; tim = [new Date().toISOString()]ms; add = ms added (addtime only).",
-    },
-    exp: new Date().toISOString(),
-    sta: renameKeys(stats, SHORT_KEYS),
-    set: renameKeys(settings, SHORT_KEYS),
-  };
-  const json = JSON.stringify(backup, null, 2);
-  // local date and time, e.g. stats-2026-11-18_14-05-32.json (no colons: not allowed in filenames)
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-  const filename = `stats-${stamp}.json`;
-  const file = new File([json], filename, { type: "application/json" });
-  // share sheet works best on phones (save to Files, email, etc.)
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: filename });
-      return true;
-    } catch (err) {
-      if (err.name === "AbortError") return false;
-    }
-  }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(file);
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  return true;
-}
-
-// import: a backup loads as yours (it asks first if you already have stats). an old read-only copy (readOnly: true,
-// from when the app could export those) opens in viewing mode instead
-$("importBtn").onclick = () => {
-  $("exportDialog").close();
-  $("importFile").click();
-};
-$("importFile").onchange = async () => {
-  const file = $("importFile").files[0];
-  $("importFile").value = "";
-  if (!file) return;
-  try {
-    // short keys back to the full names (older files already use full names and pass through unchanged)
-    const parsed = renameKeys(JSON.parse(await file.text()), LONG_KEYS);
-    // new backups are { _readme, exported, stats }; old ones are a bare array
-    const data = Array.isArray(parsed) ? parsed : parsed && parsed.stats;
-    if (!Array.isArray(data)) throw new Error();
-    const incoming = data.map(normalize);
-    // old read-only copies are only for looking at
-    const readOnly = !Array.isArray(parsed) && parsed.readOnly === true;
-    if (readOnly) {
-      viewing = incoming; // never saved, gone when you go back
-      render();
-      return;
-    }
-    const shown = incoming.filter((s) => !s.deleted).length;
-    const withSettings = parsed.settings && typeof parsed.settings === "object";
-    const load = () => {
-      stats = incoming;
-      save();
-      // the backup's settings too: stored, then read back through loadSettings so anything odd falls back to defaults
-      if (withSettings) {
-        try {
-          localStorage.setItem(SETTINGS_KEY, JSON.stringify(parsed.settings));
-        } catch {}
-        settings = loadSettings();
-        saveSettings();
-      }
-      render();
-      markSeen();
-    };
-    const what = withSettings ? `${shown} stat(s) and the settings` : `${shown} stat(s)`;
-    if (visible().length) ask(`replace your current stats with ${what} from the file?`, load);
-    else load();
-  } catch {
-    ask("that file doesn't look like a stats backup.");
-  }
-};

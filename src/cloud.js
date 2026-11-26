@@ -660,24 +660,19 @@ $("helpSync").onclick = () => {
   show($("accountDialog"));
 };
 
-// opened from the first visit's upside-down ? page (not the menu): back goes there instead
+// opened from the first visit's "#welcomeback" (not the menu): back goes back to the # screen
 let accountFromStart = false;
-$("startCloud").onclick = () => {
+function openAccountFromStart() {
   accountFromStart = true;
   accountFromHelp = false;
-  $("startDialog").close();
   renderAccount();
   show($("accountDialog"));
-};
-// back: to wherever it was opened from (the menu, or the first visit's page)
+}
+// back: to wherever it was opened from (the menu, the first-timer guide, or the # screen)
 $("accountBack").onclick = () => {
   $("accountDialog").close();
-  // logged in from the first visit and now has stats: the intro's gone, so back is just the list
-  if (accountFromHelp) {
-    // the guide is still open underneath
-  } else if (accountFromStart) {
-    if (isNew()) show($("startDialog"));
-  } else show($("menuDialog"));
+  // the guide is still open underneath / the # screen (or, logged in with stats now, the list) is right behind
+  if (!accountFromHelp && !accountFromStart) show($("menuDialog"));
   accountFromStart = accountFromHelp = false;
 };
 
