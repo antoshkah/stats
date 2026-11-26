@@ -161,6 +161,7 @@ dialog.page > * { width: min(100%, 300px); }
 .icons button[hidden] { display: none; }
 /* 👍 👎 sit close together, centred */
 #confirmView .icons, #exportConfirm .icons { justify-content: center; gap: 36px; }
+#confirmView .ask-exit { margin-top: 18px; }
 /* export page: one column down the middle, buttons a little bigger than the usual 52px */
 #exportChoices { flex-direction: column; align-items: center; gap: 14px; }
 #exportChoices button { width: 62px; height: 62px; }

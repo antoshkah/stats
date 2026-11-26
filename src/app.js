@@ -604,8 +604,10 @@ function ask(text, yes = null, html = false, no = null, words = null) {
   $("noWord").textContent = words ? words[1] : "";
   $("yesBtn").setAttribute("aria-label", words ? words[0] : "Yes");
   $("noBtn").setAttribute("aria-label", words ? words[1] : "No");
+  $("askExitRow").hidden = !no; // 👎 does something: exit is the way to do neither
   show($("zeroDialog"));
 }
+$("askExit").onclick = () => $("zeroDialog").close();
 $("noBtn").onclick = () => {
   const no = onNo;
   $("zeroDialog").close();

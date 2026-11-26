@@ -220,6 +220,10 @@
           <button id="yesBtn" class="danger" aria-label="Yes"><svg class="ic"><use href="#i-up" /></svg><span class="ask-word" id="yesWord"></span></button>
           <button id="noBtn" class="muted" aria-label="No"><svg class="ic"><use id="noIcon" href="#i-down" /></svg><span class="ask-word" id="noWord"></span></button>
         </div>
+        <!-- only when 👎 does something of its own (e.g. disconnect: keep / delete): exit = neither, just go back -->
+        <div class="icons ask-exit" id="askExitRow" hidden>
+          <button id="askExit" class="muted" aria-label="Cancel"><svg class="ic"><use href="#i-exit" /></svg></button>
+        </div>
       </div>
     </dialog>
 

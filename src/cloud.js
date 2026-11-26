@@ -584,7 +584,7 @@ $("loginForm").onsubmit = (e) => {
   );
 };
 // log out: asks whether to keep this device's stats and settings. 👍 keep them (logged out, they just stop syncing),
-// 👎 clear them (and the app reloads onto the empty + screen). tapping away cancels: still connected.
+// 👎 clear them (and the app reloads onto the empty + screen). exit (or tapping away) cancels: still connected.
 // either way the page fades and the cloud implodes first, and a change not sent yet goes up before anything else
 $("logoutBtn").onclick = () =>
   ask(
