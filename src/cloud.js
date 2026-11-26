@@ -682,8 +682,8 @@ $("cloudDeleteBtn").onclick = () => {
   }, true);
 };
 
-// first-visit guide → "To sync online click here": the cloud login, opened on top of the guide
-// (closing the guide would count the first visit as done). back closes it, the guide's still there
+// first-visit guide → "To sync online click here": the cloud login, opened on top of the guide.
+// back closes both: logged in, onto your list; not, back to the # screen (not the guide)
 let accountFromHelp = false;
 $("helpSync").onclick = () => {
   accountFromHelp = true;
@@ -702,7 +702,11 @@ function openAccountFromStart() {
 // back: to wherever it was opened from (the menu, the first-timer guide, or the # screen)
 $("accountBack").onclick = () => {
   $("accountDialog").close();
-  // the guide is still open underneath / the # screen (or, logged in with stats now, the list) is right behind
+  if (accountFromHelp) {
+    helpKeepsIntro = !session; // (app.js) not logged in: the guide closes onto the # screen, not counting as seen
+    $("helpDialog").close();
+  }
+  // the # screen (or, logged in with stats now, the list) is right behind
   if (!accountFromHelp && !accountFromStart) show($("menuDialog"));
   accountFromStart = accountFromHelp = false;
 };

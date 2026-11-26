@@ -806,7 +806,13 @@ $("helpDialog").addEventListener("click", (e) => {
   if (!helpFromMenu || e.target.closest("button, a")) return;
   leaveHelp();
 });
-$("helpDialog").addEventListener("close", markSeen);
+// closing the first-timer guide counts the first visit as done, except when leaving the login opened from it
+// without logging in: that goes back to the # screen (helpKeepsIntro, cloud.js)
+let helpKeepsIntro = false;
+$("helpDialog").addEventListener("close", () => {
+  if (helpKeepsIntro) helpKeepsIntro = false;
+  else markSeen();
+});
 
 // wipes everything this app keeps in localStorage (stats, settings, cloud login, first-visit flags), then
 // reloads. only this app's keys: the rest of the site shares localStorage.
