@@ -10,6 +10,7 @@ const $ = (id) => document.getElementById(id);
 // timed stat:   { id, name, kind: "timer", created, elapsed, since, highest, deleted?, log }
 //   elapsed = ms banked from earlier runs, since = when the current run started (null = paused),
 //   highest = longest it has run, in ms
+// either can also have hideView: true (left out of the live view)
 // the log only holds resets and deletes; deleted stats are kept (hidden) so their history survives (and syncs)
 let stats = load();
 
@@ -55,6 +56,7 @@ function normalize(s) {
     stat.highest = Math.max(Number(s.highest) || 0, stat.count, ...all.map((e) => e.count || 0));
   }
   if (s.deleted) stat.deleted = String(s.deleted);
+  if (s.hideView === true) stat.hideView = true; // left out of the live view (stat settings → per stat)
   // the latest +1 / −1 (counted) or pause / resume (timed), if there's been one
   const lastOk = timer ? ["pause", "resume", "addtime"] : ["add", "subtract"];
   if (s.last && lastOk.includes(s.last.action) && !isNaN(Date.parse(s.last.time))) {

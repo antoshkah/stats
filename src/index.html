@@ -416,6 +416,12 @@
           </div>
         </div></div>
       </div>
+      <!-- per stat: one line each (its name, then its own switches). the eye: shown in your live view, or (tapped: a red
+           cross over it) left out of it. settings.js -->
+      <div class="setting">
+        <button class="set-head"><span class="set-ic" role="button" aria-label="What is this?" data-tip="per stat: {eye} in your live view, or {noeye} hidden from it.">#</span><span class="set-val">per stat</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <div class="set-body"><div class="set-inner"><div class="stat-opts" id="statOpts"></div></div></div>
+      </div>
       <!-- clear local cache (a phone with a red cross over it; asks first), next to the exit -->
       <div class="icons settings-end">
         <button id="clearLocal" aria-label="Clear local cache"><svg class="ic"><use href="#i-phone-x" /></svg></button>

@@ -1,5 +1,5 @@
 // settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
-// stat settings = hold, pause, info. loadSettings / applySettings / THEMES / FONTS live in
+// stat settings = hold, pause, info, per stat (live view), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
 // the inline script in index.html's <head>, so the look is applied before the page draws
 
 // settings
@@ -77,6 +77,39 @@ function renderSettings() {
     b.setAttribute("aria-checked", settings[b.dataset.toggle]);
   }
   $("themeVal").innerHTML = `<span class="dot" style="background:${THEMES[settings.theme].bg}"></span>${settings.theme}`;
+  renderStatOpts();
+}
+// stat settings → per stat: a line per stat (not the deleted ones), its name, then its switches.
+// the eye: shown in your live view (live.html) or, tapped, left out of it (an eye with a red cross over it).
+// kept on the stat itself (hideView), so it syncs with it and the live view can see it
+function renderStatOpts() {
+  const box = $("statOpts");
+  box.innerHTML = "";
+  const list = visible();
+  if (!list.length) {
+    box.innerHTML = '<div class="stat-opts-none">no stats yet</div>';
+    return;
+  }
+  for (const stat of list) {
+    const row = document.createElement("div");
+    row.className = "stat-opt";
+    const name = document.createElement("span");
+    name.className = "stat-opt-name";
+    name.textContent = stat.name;
+    const eye = document.createElement("button");
+    eye.className = "stat-opt-eye";
+    eye.classList.toggle("off", !!stat.hideView);
+    eye.setAttribute("aria-label", `${stat.name}: ${stat.hideView ? "hidden from" : "shown in"} the live view`);
+    eye.innerHTML = `<svg class="ic"><use href="#${stat.hideView ? "i-eye-x" : "i-eye"}" /></svg>`;
+    eye.onclick = () => {
+      if (stat.hideView) delete stat.hideView;
+      else stat.hideView = true;
+      save(); // (and up to the cloud, where the live view reads it)
+      renderStatOpts();
+    };
+    row.append(name, eye);
+    box.append(row);
+  }
 }
 // pause: 0 / 1 / 2 taps (stays open, so you can see what you picked)
 for (const b of document.querySelectorAll("[data-mode]")) {
@@ -191,7 +224,9 @@ function showTip(icon) {
     .replaceAll("{reset}", '<svg class="ic tip-ic" aria-label="reset"><use href="#i-reset" /></svg>')
     .replaceAll("{delete}", '<svg class="ic tip-ic danger" aria-label="deletes"><use href="#i-trash" /></svg>')
     .replaceAll("{noreset}", '<svg class="ic tip-ic" aria-label="not resets"><use href="#i-reset-x" /></svg>')
-    .replaceAll("{nodelete}", '<svg class="ic tip-ic" aria-label="not deletes"><use href="#i-trash-x" /></svg>');
+    .replaceAll("{nodelete}", '<svg class="ic tip-ic" aria-label="not deletes"><use href="#i-trash-x" /></svg>')
+    .replaceAll("{eye}", '<svg class="ic tip-ic" aria-label="shown"><use href="#i-eye" /></svg>')
+    .replaceAll("{noeye}", '<svg class="ic tip-ic" aria-label="hidden"><use href="#i-eye-x" /></svg>');
   // one line, kept inside the settings column (so it never pushes the page sideways on a phone):
   // ideally starting just left of the icon, shifted left if it would run off the right edge.
   // the point stays under the icon's middle wherever the bubble ends up
