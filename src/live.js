@@ -33,7 +33,7 @@ function setState(text) {
 }
 
 // the list, like the app's: name greyed on the left, the number on the right. deleted stats aren't shown,
-// nor ones the owner hid from the live view (the app's stat settings → per stat → eye)
+// nor ones the owner hid from the live view (the eye on the stat's page in the app)
 function render() {
   const list = $("list");
   list.innerHTML = "";

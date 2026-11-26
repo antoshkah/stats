@@ -184,6 +184,8 @@
         <button id="minusBtn" aria-label="Subtract one">−</button>
         <!-- timed stats only: add time by hand -->
         <button id="addTimeBtn" aria-label="Add time" hidden>+</button>
+        <!-- shown in your live view (eye), or left out of it (tapped: a red cross over the eye). app.js -->
+        <button id="viewToggle" aria-label="Shown in the live view"><svg class="ic"><use id="viewToggleIcon" href="#i-eye" /></svg></button>
         <!-- only on a deleted stat's page -->
         <button id="restoreBtn" aria-label="Restore" hidden><svg class="ic"><use href="#i-restore" /></svg></button>
         <button id="purgeBtn" class="danger" aria-label="Delete permanently" hidden><svg class="ic"><use href="#i-trash" /></svg></button>
@@ -422,9 +424,10 @@
           </div>
         </div></div>
       </div>
-      <!-- auto reset: off, or every day / week (from monday) / month. which stats: switched on one by one under "per stat" -->
+      <!-- auto reset: off, or every day / week (from monday) / month. under it (while it's on): a line per stat with its
+           reset arrow, to switch that stat on (bright) or off (dim). settings.js -->
       <div class="setting">
-        <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="{reset} chosen stats (per stat) each new day, week or month."><use href="#i-reset" /></svg><span class="set-val" id="autoVal">off</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
+        <button class="set-head"><svg class="ic set-ic" role="button" aria-label="What is this?" data-tip="{reset} the stats switched on, each new day, week or month."><use href="#i-reset" /></svg><span class="set-val" id="autoVal">off</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
         <div class="set-body"><div class="set-inner">
           <div class="modes modes-words">
             <button data-mode="autoReset:off" aria-label="No automatic resets">off</button>
@@ -432,13 +435,8 @@
             <button data-mode="autoReset:week" aria-label="Every week, from monday">week</button>
             <button data-mode="autoReset:month" aria-label="Every month">month</button>
           </div>
+          <div class="stat-opts" id="statOpts"></div>
         </div></div>
-      </div>
-      <!-- per stat: one line each (its name, then its own switches). the eye: shown in your live view, or (tapped: a red
-           cross over it) left out of it. the reset arrow (only while auto reset is on): this stat resets automatically. settings.js -->
-      <div class="setting">
-        <button class="set-head"><span class="set-ic" role="button" aria-label="What is this?" data-tip="per stat: {eye} in your live view or {noeye} hidden. {reset} auto reset on / off.">#</span><span class="set-val">per stat</span><svg class="ic chev"><use href="#i-chev" /></svg></button>
-        <div class="set-body"><div class="set-inner"><div class="stat-opts" id="statOpts"></div></div></div>
       </div>
       <!-- clear local cache (a phone with a red cross over it; asks first), next to the exit -->
       <div class="icons settings-end">

@@ -57,7 +57,7 @@ function normalize(s) {
     stat.highest = Math.max(Number(s.highest) || 0, stat.count, ...all.map((e) => e.count || 0));
   }
   if (s.deleted) stat.deleted = String(s.deleted);
-  if (s.hideView === true) stat.hideView = true; // left out of the live view (stat settings → per stat)
+  if (s.hideView === true) stat.hideView = true; // left out of the live view (the eye on its stat page)
   // resets automatically (stat settings → auto reset + per stat), counting from when that was switched on
   if (s.autoReset === true) {
     stat.autoReset = true;
@@ -467,8 +467,23 @@ function showEditValue() {
   $("addTimeBtn").hidden = !timer || gone;
   $("restoreBtn").hidden = !gone;
   $("purgeBtn").hidden = !gone;
+  // the live view eye: shown in it, or (red cross) left out of it
+  $("viewToggle").hidden = gone;
+  $("viewToggleIcon").setAttribute("href", editing.hideView ? "#i-eye-x" : "#i-eye");
+  $("viewToggle").setAttribute("aria-label", editing.hideView ? "Hidden from the live view" : "Shown in the live view");
   showEditMeta();
 }
+// the stat page's eye: in your live view or not. kept on the stat (hideView), so it goes up to the cloud with it,
+// where the database leaves hidden stats out of what live view watchers can read (you always see all of yours)
+$("viewToggle").onclick = () => {
+  const stat = editing;
+  if (!stat || stat.deleted) return;
+  if (stat.hideView) delete stat.hideView;
+  else stat.hideView = true;
+  save();
+  showEditValue();
+  if (navigator.vibrate) navigator.vibrate(10);
+};
 // "2026-11-18 14:05": 24h, always UTC (but not labelled), so it reads the same wherever you are
 // pass seconds = true for "…14:05:09" (used by "last", where taps can be seconds apart)
 function fmtUtc(iso, seconds = false) {

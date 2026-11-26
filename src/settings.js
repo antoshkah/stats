@@ -1,5 +1,5 @@
 // settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
-// stat settings = hold, pause, info, auto reset, per stat (live view, auto reset), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
+// stat settings = hold, pause, info, auto reset (and which stats), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
 // the inline script in index.html's <head>, so the look is applied before the page draws
 
 // settings
@@ -80,14 +80,13 @@ function renderSettings() {
   $("themeVal").innerHTML = `<span class="dot" style="background:${THEMES[settings.theme].bg}"></span>${settings.theme}`;
   renderStatOpts();
 }
-// stat settings → per stat: a line per stat (not the deleted ones), its name, then its switches.
-// the eye: shown in your live view (live.html) or, tapped, left out of it (an eye with a red cross over it).
-// kept on the stat itself (hideView), so it syncs with it and the live view can see it.
-// the reset arrow, only while auto reset is on: this stat resets automatically (dim = it doesn't). kept on the stat
-// too (autoReset), with when it was switched on (autoSince), so it starts counting from then (see autoResets in app.js)
+// stat settings → auto reset, under the day / week / month choice (only while it's on): a line per stat (not the
+// deleted ones), its name, then its reset arrow: this stat resets automatically (dim = it doesn't). kept on the stat
+// (autoReset), with when it was switched on (autoSince), so it starts counting from then (see autoResets in app.js)
 function renderStatOpts() {
   const box = $("statOpts");
   box.innerHTML = "";
+  if (settings.autoReset === "off") return;
   const list = visible();
   if (!list.length) {
     box.innerHTML = '<div class="stat-opts-none">no stats yet</div>';
@@ -99,38 +98,23 @@ function renderStatOpts() {
     const name = document.createElement("span");
     name.className = "stat-opt-name";
     name.textContent = stat.name;
-    const eye = document.createElement("button");
-    eye.className = "stat-opt-eye";
-    eye.classList.toggle("off", !!stat.hideView);
-    eye.setAttribute("aria-label", `${stat.name}: ${stat.hideView ? "hidden from" : "shown in"} the live view`);
-    eye.innerHTML = `<svg class="ic"><use href="#${stat.hideView ? "i-eye-x" : "i-eye"}" /></svg>`;
-    eye.onclick = () => {
-      if (stat.hideView) delete stat.hideView;
-      else stat.hideView = true;
-      save(); // (and up to the cloud, where the live view reads it)
+    const auto = document.createElement("button");
+    auto.className = "stat-opt-auto";
+    auto.classList.toggle("off", !stat.autoReset);
+    auto.setAttribute("aria-label", `${stat.name}: ${stat.autoReset ? "resets" : "doesn't reset"} every ${settings.autoReset}`);
+    auto.innerHTML = '<svg class="ic"><use href="#i-reset" /></svg>';
+    auto.onclick = () => {
+      if (stat.autoReset) {
+        delete stat.autoReset;
+        delete stat.autoSince;
+      } else {
+        stat.autoReset = true;
+        stat.autoSince = new Date().toISOString(); // from now on: no reset straight away for the time before
+      }
+      save();
       renderStatOpts();
     };
-    row.append(name);
-    if (settings.autoReset !== "off") {
-      const auto = document.createElement("button");
-      auto.className = "stat-opt-auto";
-      auto.classList.toggle("off", !stat.autoReset);
-      auto.setAttribute("aria-label", `${stat.name}: ${stat.autoReset ? "resets" : "doesn't reset"} every ${settings.autoReset}`);
-      auto.innerHTML = '<svg class="ic"><use href="#i-reset" /></svg>';
-      auto.onclick = () => {
-        if (stat.autoReset) {
-          delete stat.autoReset;
-          delete stat.autoSince;
-        } else {
-          stat.autoReset = true;
-          stat.autoSince = new Date().toISOString(); // from now on: no reset straight away for the time before
-        }
-        save();
-        renderStatOpts();
-      };
-      row.append(auto);
-    }
-    row.append(eye);
+    row.append(name, auto);
     box.append(row);
   }
 }
@@ -251,9 +235,7 @@ function showTip(icon) {
     .replaceAll("{reset}", '<svg class="ic tip-ic" aria-label="reset"><use href="#i-reset" /></svg>')
     .replaceAll("{delete}", '<svg class="ic tip-ic danger" aria-label="deletes"><use href="#i-trash" /></svg>')
     .replaceAll("{noreset}", '<svg class="ic tip-ic" aria-label="not resets"><use href="#i-reset-x" /></svg>')
-    .replaceAll("{nodelete}", '<svg class="ic tip-ic" aria-label="not deletes"><use href="#i-trash-x" /></svg>')
-    .replaceAll("{eye}", '<svg class="ic tip-ic" aria-label="shown"><use href="#i-eye" /></svg>')
-    .replaceAll("{noeye}", '<svg class="ic tip-ic" aria-label="hidden"><use href="#i-eye-x" /></svg>');
+    .replaceAll("{nodelete}", '<svg class="ic tip-ic" aria-label="not deletes"><use href="#i-trash-x" /></svg>');
   // one line, kept inside the settings column (so it never pushes the page sideways on a phone):
   // ideally starting just left of the icon, shifted left if it would run off the right edge.
   // the point stays under the icon's middle wherever the bubble ends up
