@@ -10,7 +10,8 @@ const $ = (id) => document.getElementById(id);
 // timed stat:   { id, name, kind: "timer", created, elapsed, since, highest, deleted?, log }
 //   elapsed = ms banked from earlier runs, since = when the current run started (null = paused),
 //   highest = longest it has run, in ms
-// either can also have hideView: true (left out of the live view)
+// either can also have hideView: true (left out of the live view), and autoReset: true + autoSince (resets itself
+// each new day / week / month, see autoResets)
 // the log only holds resets and deletes; deleted stats are kept (hidden) so their history survives (and syncs)
 let stats = load();
 
@@ -57,6 +58,11 @@ function normalize(s) {
   }
   if (s.deleted) stat.deleted = String(s.deleted);
   if (s.hideView === true) stat.hideView = true; // left out of the live view (stat settings → per stat)
+  // resets automatically (stat settings → auto reset + per stat), counting from when that was switched on
+  if (s.autoReset === true) {
+    stat.autoReset = true;
+    if (!isNaN(Date.parse(s.autoSince))) stat.autoSince = String(s.autoSince);
+  }
   // the latest +1 / −1 (counted) or pause / resume (timed), if there's been one
   const lastOk = timer ? ["pause", "resume", "addtime"] : ["add", "subtract"];
   if (s.last && lastOk.includes(s.last.action) && !isNaN(Date.parse(s.last.time))) {
@@ -136,6 +142,46 @@ function save() {
   } catch {}
   if (typeof cloudQueue === "function") cloudQueue(); // logged in: copy the change up to the cloud (cloud.js loads last)
 }
+
+// ── automatic resets (stat settings → auto reset: day / week / month, and per stat: which ones) ──
+// a stat switched on resets once each new day / week / month (your local time; weeks start on monday), like
+// tapping reset: logged, and a running timer keeps running from zero. it's due when nothing has started it off
+// since the current period began: not a reset, not being made or restored (created), not being switched on (autoSince).
+// offline it runs on opening and every minute. logged in, only straight after a sync with the cloud (cloud.js), so
+// an old copy on this device is never reset and sent up over newer changes from another device
+function periodStart(kind, now = new Date()) {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // today, 00:00 local
+  if (kind === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back to monday
+  if (kind === "month") d.setDate(1);
+  return d.getTime();
+}
+function autoResets() {
+  if (!["day", "week", "month"].includes(settings.autoReset)) return;
+  const from = periodStart(settings.autoReset);
+  const due = stats.filter((s) => {
+    if (!s.autoReset || s.deleted) return false;
+    const starts = [s.created, s.autoSince, ...s.log.filter((e) => e.action === "reset").map((e) => e.time)];
+    return Math.max(0, ...starts.map((t) => Date.parse(t) || 0)) < from;
+  });
+  if (!due.length) return;
+  for (const s of due) record(s, "reset");
+  render();
+  if (editing && due.includes(editing)) showEditValue();
+}
+// auto reset switched on, or to another period (settings.js): every stat switched on counts from now
+function restartAutoResets() {
+  const now = new Date().toISOString();
+  let changed = false;
+  for (const s of stats) {
+    if (!s.autoReset) continue;
+    s.autoSince = now;
+    changed = true;
+  }
+  if (changed) save();
+}
+setInterval(() => {
+  if (typeof session === "undefined" || !session) autoResets(); // (logged in: cloud.js runs it after each sync)
+}, 60 * 1000);
 
 // first-timers see an i instead of the star until they've read the guide or synced
 function isNew() {

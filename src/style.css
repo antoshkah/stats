@@ -528,6 +528,9 @@ body.viewing .row .count { cursor: default; }
 /* "taps" after the 2: just a word, not a choice */
 .modes { align-items: center; }
 .modes-unit { color: var(--muted); font-size: 0.85rem; margin-left: -10px; }
+/* words instead of numbers (auto reset: off day week month): closer together, so all four fit */
+.modes.modes-words { gap: 4px; }
+.modes-words button { font-size: 0.85rem; }
 .row.tappable { cursor: pointer; touch-action: manipulation; } /* no double-tap zoom */
 .set-head .chev, .font-chev { width: 16px; height: 16px; color: var(--muted); transition: rotate 0.22s ease; }
 .setting.open .chev { rotate: 180deg; }
@@ -666,6 +669,9 @@ body.viewing .row .count { cursor: default; }
 .stat-opt button .ic { width: 22px; height: 22px; }
 /* hidden from the live view: the eye (with its red cross) dims a little, so the shown ones stand out */
 .stat-opt-eye.off { opacity: 0.7; }
+/* auto reset (only while it's on in settings): bright = this stat resets itself, dim = it doesn't */
+.stat-opt-auto { transition: opacity 0.15s; }
+.stat-opt-auto.off { opacity: 0.3; }
 .stat-opts-none { padding: 6px 0 2px; font-size: 0.8rem; font-weight: normal; color: var(--muted); }
 /* the narrowest phones (~320px wide) don't have room for two columns: one column of six instead */
 @media (max-width: 345px) {

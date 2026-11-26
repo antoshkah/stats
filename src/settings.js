@@ -1,5 +1,5 @@
 // settings: a page of three (appearance, stat settings, the demo). appearance = font, colours;
-// stat settings = hold, pause, info, per stat (live view), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
+// stat settings = hold, pause, info, auto reset, per stat (live view, auto reset), clear local cache. loadSettings / applySettings / THEMES / FONTS live in
 // the inline script in index.html's <head>, so the look is applied before the page draws
 
 // settings
@@ -72,6 +72,7 @@ function renderSettings() {
   }
   // the pause line shows the number of taps chosen
   $("pauseVal").textContent = { off: 0, tap: 1, double: 2 }[settings.timerPause];
+  $("autoVal").textContent = settings.autoReset; // off / day / week / month
   for (const b of document.querySelectorAll("[data-toggle]")) {
     b.classList.toggle("on", settings[b.dataset.toggle]);
     b.setAttribute("aria-checked", settings[b.dataset.toggle]);
@@ -81,7 +82,9 @@ function renderSettings() {
 }
 // stat settings → per stat: a line per stat (not the deleted ones), its name, then its switches.
 // the eye: shown in your live view (live.html) or, tapped, left out of it (an eye with a red cross over it).
-// kept on the stat itself (hideView), so it syncs with it and the live view can see it
+// kept on the stat itself (hideView), so it syncs with it and the live view can see it.
+// the reset arrow, only while auto reset is on: this stat resets automatically (dim = it doesn't). kept on the stat
+// too (autoReset), with when it was switched on (autoSince), so it starts counting from then (see autoResets in app.js)
 function renderStatOpts() {
   const box = $("statOpts");
   box.innerHTML = "";
@@ -107,15 +110,39 @@ function renderStatOpts() {
       save(); // (and up to the cloud, where the live view reads it)
       renderStatOpts();
     };
-    row.append(name, eye);
+    row.append(name);
+    if (settings.autoReset !== "off") {
+      const auto = document.createElement("button");
+      auto.className = "stat-opt-auto";
+      auto.classList.toggle("off", !stat.autoReset);
+      auto.setAttribute("aria-label", `${stat.name}: ${stat.autoReset ? "resets" : "doesn't reset"} every ${settings.autoReset}`);
+      auto.innerHTML = '<svg class="ic"><use href="#i-reset" /></svg>';
+      auto.onclick = () => {
+        if (stat.autoReset) {
+          delete stat.autoReset;
+          delete stat.autoSince;
+        } else {
+          stat.autoReset = true;
+          stat.autoSince = new Date().toISOString(); // from now on: no reset straight away for the time before
+        }
+        save();
+        renderStatOpts();
+      };
+      row.append(auto);
+    }
+    row.append(eye);
     box.append(row);
   }
 }
-// pause: 0 / 1 / 2 taps (stays open, so you can see what you picked)
+// pause: 0 / 1 / 2 taps, auto reset: off / day / week / month (both stay open, so you can see what you picked)
 for (const b of document.querySelectorAll("[data-mode]")) {
   const [key, value] = b.dataset.mode.split(":");
   b.onclick = () => {
+    if (settings[key] === value) return;
     settings[key] = value;
+    // auto reset switched on or to another period: the stats switched on count from now, so changing it (say week
+    // → day on a wednesday afternoon) doesn't reset them all on the spot
+    if (key === "autoReset") restartAutoResets();
     saveSettings();
   };
 }

@@ -39,6 +39,8 @@ if (isNew()) {
   $("intro").hidden = false;
 }
 render();
+// automatic resets that came due while the app was closed (logged in: after the first sync instead, cloud.js)
+if (!session) autoResets();
 
 // first visit: the # screen (app.js) — the # pops in, "stats" under it
 if (isNew()) playIntro();

@@ -171,6 +171,9 @@ function synced() {
     localStorage.setItem(LAST_SYNC_KEY, String(lastSync));
   } catch {}
   renderAccount();
+  // in step with the cloud: now it's safe to do any automatic resets that are due (app.js). they're changes like
+  // any other, so they go up straight after
+  autoResets();
 }
 // a fetch that can't reach the server throws a TypeError: that's being offline, not an error
 function syncFailed(e) {
