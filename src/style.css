@@ -176,8 +176,13 @@ dialog.page > * { width: min(100%, 300px); }
 #menuDialog .icons button { width: 76px; height: 76px; }
 #menuDialog .icons .ic { width: 38px; height: 38px; }
 #menuDialog .glyph { font-size: 2.75rem; }
-/* the cloud only fills the middle of its drawing, so it gets a bigger box to look the same size as the others */
-#menuDialog #accountBtn .ic { width: 48px; height: 48px; }
+/* the cloud: the plug from the cloud page (wide), in a wider button */
+#menuDialog #accountBtn { width: 120px; }
+#menuDialog #accountBtn .plug { width: 108px; height: 32px; }
+#helpDialog .legend .plug { width: 88px; height: 44px; color: var(--fg); }
+.fresh #helpDialog .legend .plug { color: var(--bg); }
+.d-menu .d-plug { width: 46px; }
+.d-menu .plug { width: 42px; height: 13px; }
 
 /* live view (live.html): eye + its state above the list */
 .viewing-label {
